@@ -6,3 +6,4 @@
 *.doc filter=lfs diff=lfs merge=lfs -text
 *.docx filter=lfs diff=lfs merge=lfs -text
 *.bkp filter=lfs diff=lfs merge=lfs -text
+System Architecture.png !filter !diff !merge text
