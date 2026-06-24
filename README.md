@@ -13,4 +13,4 @@ Front-End Demo:
 YouTube Demo:
 
 ## System Architecture
-![System Architecture](CloudFactory/doc/System%20Architecture.png)
+![System Architecture](CloudFactory/doc/System%20Architecture.jpg)
