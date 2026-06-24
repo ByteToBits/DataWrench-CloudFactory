@@ -9,4 +9,4 @@
 This repository contains my Open-Source Passion Project for a Manufacturing Execution System (MES).
 
 ## System Architecture
-![System Architecture](https://raw.githubusercontent.com/ByteToBits/DataWrench-CloudFactory/main/System%20Architecture.png)
+![System Architecture](System%20Architecture.jpg)
