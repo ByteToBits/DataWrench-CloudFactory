@@ -9,4 +9,5 @@
 This repository contains my Open-Source Passion Project for a Manufacturing Execution System (MES).
 
 ## System Architecture
-![System Architecture](doc/images/system-architecture.png)
+
+![System Architecture](system-architecture.png)
