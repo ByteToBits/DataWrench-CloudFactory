@@ -6,14 +6,18 @@
 ![Redis](https://img.shields.io/badge/Redis-DC382D?style=flat&logo=redis&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white)
 
-This repository contains my Open-Source Passion Project for a Manufacturing Execution System (MES). Inside this repository contains all the backend services for the Kubernetes Clusters and the other resources like the SQL Schema and SEC / GEM Host. 
+This repository contains my open-source passion project for a Manufacturing Execution System (MES). It includes all backend services for the Kubernetes clusters, along with other resources such as the SQL schema and SEC/GEM host. The project provides a scalable and flexible MES solution, ranging from small-scale manufacturing to critical high-fault-tolerant, high-throughput semiconductor manufacturing.
 
 Front-End Demo: 
 
 YouTube Demo:
 
 ## System Architecture
+The project adopts a Microservice Architecture to allow for scalable resources and services depending on project requirements and budget. It can be deployed on-premises or on the cloud, and scaled in performance by adding more nodes. Fault tolerance is achieved by adopting multiple redundancy strategies to ensure critical fab production uptime.
+
 ![System Architecture](CloudFactory/doc/System%20Architecture.jpg)
 
 ## Network Architecture (IEC-62443 and ISA-95 Compliance)
+In addition, the project is designed in such a manner that it can be deployed on-premises or on the cloud, depending on project requirements. It adopts a Secure-by-Design principle by applying industry standard designs to ensure compliance with IEC 62443 and ISA-95 (Purdue Model).
+
 ![System Architecture](CloudFactory/doc/Network%20Architecture.jpg)
