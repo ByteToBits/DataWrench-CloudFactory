@@ -14,3 +14,6 @@ YouTube Demo:
 
 ## System Architecture
 ![System Architecture](CloudFactory/doc/System%20Architecture.jpg)
+
+## Network Architecture (IEC-62443 and ISA-95 Compliance)
+![System Architecture](CloudFactory/doc/Network%20Architecture.jpg)
