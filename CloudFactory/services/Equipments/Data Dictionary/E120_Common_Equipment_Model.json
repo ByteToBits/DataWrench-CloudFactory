@@ -1,0 +1,160 @@
+{
+    "id": "EQ-LINE-01",
+    "name": "Substrate Sorting Line",
+    "modules": [
+        {
+            "id": "MOD-LOADER",
+            "name": "Loader Station",
+            "subsystems": [
+                {
+                    "id": "SUB-LP-1",
+                    "name": "Load Port 1",
+                    "io_devices": [],
+                    "material_locations": [
+                        {
+                            "id": "ML-LP1",
+                            "name": "Substrate Tray Input",
+                            "capacity": 25,
+                            "occupied_part_ids": [
+                                "P-1001",
+                                "P-1002"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "SUB-LP-2",
+                    "name": "Load Port 2",
+                    "io_devices": [],
+                    "material_locations": [
+                        {
+                            "id": "ML-LP2",
+                            "name": "Empty Tray Input",
+                            "capacity": 25,
+                            "occupied_part_ids": []
+                        }
+                    ]
+                }
+            ],
+            "io_devices": [],
+            "material_locations": []
+        },
+        {
+            "id": "MOD-QR",
+            "name": "2DC QR Reading Station",
+            "subsystems": [],
+            "io_devices": [
+                {
+                    "id": "IOD-2DR-1",
+                    "name": "2D Reader 1",
+                    "device_type": "Reader"
+                },
+                {
+                    "id": "IOD-2DR-2",
+                    "name": "2D Reader 2",
+                    "device_type": "Reader"
+                }
+            ],
+            "material_locations": []
+        },
+        {
+            "id": "MOD-PROC",
+            "name": "Material Processing (Routing) Station",
+            "subsystems": [
+                {
+                    "id": "SUB-MP-1",
+                    "name": "Manual Port 1",
+                    "io_devices": [],
+                    "material_locations": []
+                }
+            ],
+            "io_devices": [
+                {
+                    "id": "IOD-CNC-1",
+                    "name": "CNC Router",
+                    "device_type": "Router"
+                }
+            ],
+            "material_locations": []
+        },
+        {
+            "id": "MOD-SORT",
+            "name": "Robotic Sorting Station",
+            "subsystems": [
+                {
+                    "id": "SUB-ROBOT-1",
+                    "name": "Robot 1",
+                    "io_devices": [
+                        {
+                            "id": "IOD-GRIP-1",
+                            "name": "Suction Gripper Small",
+                            "device_type": "Gripper"
+                        }
+                    ],
+                    "material_locations": []
+                },
+                {
+                    "id": "SUB-ROBOT-2",
+                    "name": "Robot 2",
+                    "io_devices": [
+                        {
+                            "id": "IOD-GRIP-2",
+                            "name": "Suction Gripper Small",
+                            "device_type": "Gripper"
+                        }
+                    ],
+                    "material_locations": []
+                }
+            ],
+            "io_devices": [],
+            "material_locations": []
+        },
+        {
+            "id": "MOD-UNLOADER",
+            "name": "Unloader Station",
+            "subsystems": [
+                {
+                    "id": "SUB-LP-3",
+                    "name": "Load Port 3",
+                    "io_devices": [],
+                    "material_locations": [
+                        {
+                            "id": "ML-LP3",
+                            "name": "Unloader OK Tray",
+                            "capacity": 25,
+                            "occupied_part_ids": []
+                        }
+                    ]
+                },
+                {
+                    "id": "SUB-LP-4",
+                    "name": "Load Port 4",
+                    "io_devices": [],
+                    "material_locations": [
+                        {
+                            "id": "ML-LP4",
+                            "name": "Unloader NG Tray",
+                            "capacity": 25,
+                            "occupied_part_ids": []
+                        }
+                    ]
+                },
+                {
+                    "id": "SUB-LP-5",
+                    "name": "Load Port 5",
+                    "io_devices": [],
+                    "material_locations": [
+                        {
+                            "id": "ML-LP5",
+                            "name": "Unloader Empty Tray",
+                            "capacity": 25,
+                            "occupied_part_ids": []
+                        }
+                    ]
+                }
+            ],
+            "io_devices": [],
+            "material_locations": []
+        }
+    ]
+}
