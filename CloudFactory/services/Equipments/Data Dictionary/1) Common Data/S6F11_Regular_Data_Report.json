@@ -1,0 +1,46 @@
+{
+  "header": 
+      { "doc": "Event Report Send", 
+         "stream": 6, 
+         "function": 11, 
+         "reply": true 
+      },
+  "body": [
+      { "doc": "DATAID, Data ID", 
+         "format": "U4", 
+         "value": 1002 
+      },
+      { "doc": "CEID, Collection Event ID (equipment-defined, e.g. RegularDataUpdate)", 
+         "format": "U4", 
+         "value": 200 
+      },
+      [
+         { "doc": "RPTID, Report ID", 
+            "format": "U4", 
+            "value": 2 
+         },
+         [
+            { "doc": "Jig 1 Name SV", 
+               "format": "A", 
+               "value": "JIG-01" 
+            },
+            { "doc": "Jig 2 Name SV", 
+               "format": "A", 
+               "value": "JIG-02" 
+            },
+            { "doc": "Jig 3 Name SV", 
+               "format": "A", 
+               "value": "JIG-03" 
+            },
+            { "doc": "Recipe Name SV", 
+               "format": "A", 
+               "value": "RECIPE-A" 
+            },
+            { "doc": "Material Name SV", 
+               "format": "A", 
+               "value": "MATERIAL-X" 
+            }
+         ]
+      ]
+  ]
+}

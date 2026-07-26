@@ -1,0 +1,50 @@
+{
+  "interface_id": "1.3",
+  "group_name": "Status 1 (Equipment State - State Machine)",
+  "note": "Companion to the S6F11_Event_Report.json message payload",
+  "enums": {
+    "Alarm Status": {
+      "0": "No Alarm",
+      "1": "Major Alarm",
+      "2": "Minor Alarm",
+      "3": "Advisory Alarm - Part of Equipment Temporarily Stopped",
+      "4": "Advisory Alarm - Pop-up Only, Operation Continues"
+    },
+    "Equipment Status": {
+      "0": "Stopped",
+      "1": "Initializing",
+      "2": "Initializing Complete",
+      "3": "Production (Busy)",
+      "4": "Paused",
+      "5": "Alarm Stop"
+    },
+    "Equipment Operation Status": {
+      "0": "Normal State",
+      "1": "Advisory Alarm - Operator Action or Upper-Level Communication Error",
+      "2": "Advisory Alarm - Operator Action or Cycle Stop Button",
+      "3": "Recipe Changing",
+      "4": "Material Changing",
+      "1000": "Self-Check"
+    },
+    "Substrate Waiting Status": {
+      "0": "Other than Production",
+      "1": "Not Waiting",
+      "2": "Waiting Downstream",
+      "3": "Waiting Upstream",
+      "4": "Waiting Up/Down Stream"
+    },
+    "Equipment Control Status": {
+      "0": "Initial State",
+      "1": "Automatic Operations",
+      "2": "Manual Operations",
+      "3": "Equipment Code 1",
+      "4": "Equipment Code 2",
+      "5": "Equipment Code 3"
+    },
+    "Signal Tower Status": {
+      "0": "Off",
+      "1": "On",
+      "2": "Flashing"
+    }
+  }
+}
