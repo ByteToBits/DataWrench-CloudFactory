@@ -1,0 +1,227 @@
+{
+    "carrierId": "AB-123456789",
+    "carrierType": "Wafer",
+    "carrierStatus": "InAccess",
+    "carrierInTime": "2026-04-10T20:00:00",
+    "carrierOutTime": null,
+
+    "totalAdjustmentCount": 4294967295,
+    "latestAdjustmentDatetime": "2026-04-10T20:00:00",
+    "cleaningCount": 65535,
+    "latestCleaningDatetime": "2026-04-10T20:00:00",
+    "usageAfterCleaningCount": 65535,
+
+    "totalUsageCount": 4294967295,
+    "rfidWriteCount": 4294967295,
+
+    "equipmentId": 256,
+    "portId": 256,
+    "processEquipmentId": 256,
+    "lotMixFlag": false,
+    "lotFoupUsage": 65535,
+    "slotCount": 20,
+    "lotId": "20260410-AD-12345678",
+
+    "slotMap": [
+        {
+            "slotNumber": 1,
+            "substrateAcquired": true,
+            "slotState": "Correct",
+            "substrateId": 900000002,
+            "substrateType": "Panel",
+            "pieceSerialNo": 60001,
+            "buildLayer": 3,
+            "controlFlag": "10000001"
+        },
+        {
+            "slotNumber": 2,
+            "substrateAcquired": false,
+            "slotState": "Empty",
+            "substrateId": null,
+            "substrateType": null,
+            "pieceSerialNo": null,
+            "buildLayer": null,
+            "controlFlag": null
+        },
+        {
+            "slotNumber": 3,
+            "substrateAcquired": true,
+            "slotState": "Correct",
+            "substrateId": 900000004,
+            "substrateType": "Panel",
+            "pieceSerialNo": 60003,
+            "buildLayer": 3,
+            "controlFlag": "10000003"
+        },
+        {
+            "slotNumber": 4,
+            "substrateAcquired": true,
+            "slotState": "Correct",
+            "substrateId": 900000005,
+            "substrateType": "Panel",
+            "pieceSerialNo": 60004,
+            "buildLayer": 3,
+            "controlFlag": "10000004"
+        },
+        {
+            "slotNumber": 5,
+            "substrateAcquired": true,
+            "slotState": "Correct",
+            "substrateId": 900000006,
+            "substrateType": "Panel",
+            "pieceSerialNo": 60005,
+            "buildLayer": 3,
+            "controlFlag": "10000005"
+        },
+        {
+            "slotNumber": 6,
+            "substrateAcquired": true,
+            "slotState": "Correct",
+            "substrateId": 900000007,
+            "substrateType": "Panel",
+            "pieceSerialNo": 60006,
+            "buildLayer": 3,
+            "controlFlag": "10000006"
+        },
+        {
+            "slotNumber": 7,
+            "substrateAcquired": true,
+            "slotState": "Correct",
+            "substrateId": 900000008,
+            "substrateType": "Panel",
+            "pieceSerialNo": 60007,
+            "buildLayer": 3,
+            "controlFlag": "10000007"
+        },
+        {
+            "slotNumber": 8,
+            "substrateAcquired": false,
+            "slotState": "Empty",
+            "substrateId": null,
+            "substrateType": null,
+            "pieceSerialNo": null,
+            "buildLayer": null,
+            "controlFlag": null
+        },
+        {
+            "slotNumber": 9,
+            "substrateAcquired": true,
+            "slotState": "Correct",
+            "substrateId": 900000010,
+            "substrateType": "Panel",
+            "pieceSerialNo": 60009,
+            "buildLayer": 3,
+            "controlFlag": "10000009"
+        },
+        {
+            "slotNumber": 10,
+            "substrateAcquired": false,
+            "slotState": "Empty",
+            "substrateId": null,
+            "substrateType": null,
+            "pieceSerialNo": null,
+            "buildLayer": null,
+            "controlFlag": null
+        },
+        {
+            "slotNumber": 11,
+            "substrateAcquired": true,
+            "slotState": "Correct",
+            "substrateId": 900000012,
+            "substrateType": "Panel",
+            "pieceSerialNo": 60011,
+            "buildLayer": 3,
+            "controlFlag": "10000011"
+        },
+        {
+            "slotNumber": 12,
+            "substrateAcquired": true,
+            "slotState": "Correct",
+            "substrateId": 900000013,
+            "substrateType": "Panel",
+            "pieceSerialNo": 60012,
+            "buildLayer": 3,
+            "controlFlag": "10000012"
+        },
+        {
+            "slotNumber": 13,
+            "substrateAcquired": false,
+            "slotState": "Empty",
+            "substrateId": null,
+            "substrateType": null,
+            "pieceSerialNo": null,
+            "buildLayer": null,
+            "controlFlag": null
+        },
+        {
+            "slotNumber": 14,
+            "substrateAcquired": true,
+            "slotState": "CrossSlotted",
+            "substrateId": 900000015,
+            "substrateType": "Panel",
+            "pieceSerialNo": 60014,
+            "buildLayer": 3,
+            "controlFlag": "10000014"
+        },
+        {
+            "slotNumber": 15,
+            "substrateAcquired": true,
+            "slotState": "Correct",
+            "substrateId": 900000016,
+            "substrateType": "Panel",
+            "pieceSerialNo": 60015,
+            "buildLayer": 3,
+            "controlFlag": "10000015"
+        },
+        {
+            "slotNumber": 16,
+            "substrateAcquired": true,
+            "slotState": "Correct",
+            "substrateId": 900000017,
+            "substrateType": "Panel",
+            "pieceSerialNo": 60016,
+            "buildLayer": 3,
+            "controlFlag": "10000016"
+        },
+        {
+            "slotNumber": 17,
+            "substrateAcquired": true,
+            "slotState": "Correct",
+            "substrateId": 900000018,
+            "substrateType": "Panel",
+            "pieceSerialNo": 60017,
+            "buildLayer": 3,
+            "controlFlag": "10000017"
+        },
+        {
+            "slotNumber": 18,
+            "substrateAcquired": true,
+            "slotState": "Correct",
+            "substrateId": 900000019,
+            "substrateType": "Panel",
+            "pieceSerialNo": 60018,
+            "buildLayer": 3,
+            "controlFlag": "10000018"
+        },
+        {
+            "slotNumber": 19,
+            "substrateAcquired": true,
+            "slotState": "Correct",
+            "substrateId": 900000020,
+            "substrateType": "Panel",
+            "pieceSerialNo": 60019,
+            "buildLayer": 3,
+            "controlFlag": "10000019"
+        },
+        {
+            "slotNumber": 20,
+            "substrateAcquired": false,
+            "slotState": "Empty",
+            "substrateId": null,
+            "substrateType": null,
+            "pieceSerialNo": null,
+            "buildLayer": null,
+            "controlFlag": null
+        }
+    ]
+}

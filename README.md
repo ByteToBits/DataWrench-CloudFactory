@@ -26,4 +26,3 @@ For the actual deployment, the project will use a Homelab Architecture to facili
 In addition, the project is designed in such a manner that it can be deployed on-premises or on the cloud, depending on project requirements. It adopts a Secure-by-Design principle by applying industry standard designs to ensure compliance with IEC 62443 and ISA-95 (Purdue Model).
 
 ![Network Architecture](CloudFactory/doc/Network%20Architecture.jpg)
-
