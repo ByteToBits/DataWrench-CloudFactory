@@ -1,0 +1,15 @@
+{
+   "header": {
+      "doc": "Date and Time Set Request",
+      "stream": 2,
+      "function": 31,
+      "reply": true
+   },
+   "body": [
+      {
+         "doc": "TIME, Date and Time (YYYYMMDDhhmmsscc)",
+         "format": "A",
+         "value": "20260410200000"
+      }
+   ]
+}

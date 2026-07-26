@@ -1,0 +1,38 @@
+{
+  "header": 
+      { "doc": "Event Report Send", 
+         "stream": 6, 
+         "function": 11, 
+         "reply": true 
+      },
+  "body": [
+      { "doc": "DATAID, Data ID", 
+         "format": "U4", 
+         "value": 1001 
+      },
+      { "doc": "CEID, Collection Event ID", 
+         "format": "U4", 
+         "value": 100 
+      },
+      [
+         { "doc": "RPTID, Report ID", 
+            "format": "U4", 
+            "value": 1 
+         },
+         [
+            { "doc": "EquipmentStatus SV", 
+               "format": "U2", 
+               "value": 3 
+            },
+            { "doc": "EquipmentOperationStatus SV", 
+               "format": "U2", 
+               "value": 0 
+            },
+            { "doc": "SubstrateWaitingStatus SV", 
+               "format": "U2", 
+               "value": 16 
+            }
+         ]
+      ]
+  ]
+}

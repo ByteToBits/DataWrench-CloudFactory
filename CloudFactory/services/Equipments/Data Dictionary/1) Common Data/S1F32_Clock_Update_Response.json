@@ -1,0 +1,15 @@
+{
+   "header": {
+      "doc": "Date and Time Set Acknowledge",
+      "stream": 2,
+      "function": 32,
+      "reply": false
+   },
+   "body": [
+      {
+         "doc": "TIACK, Time Set Acknowledge Code (0 = accepted)",
+         "format": "B",
+         "value": 0
+      }
+   ]
+}
