@@ -12,7 +12,7 @@ Front-End Demo:
 
 YouTube Demo:
 
-Documentation, Images & CAD Models: ![Google Drive](https://drive.google.com/drive/folders/1IlRub_8c6jkS4ydqFX7AeLRfFl0_Vmcx?usp=sharing)
+Documentation & Resources: [Google Drive](https://drive.google.com/drive/folders/1IlRub_8c6jkS4ydqFX7AeLRfFl0_Vmcx?usp=sharing)
 
 ## System Architecture
 The project adopts a Microservice Architecture to allow for scalable resources and services depending on project requirements and budget. It can be deployed on-premises or on the cloud, and scaled in performance by adding more nodes. Fault tolerance is achieved by adopting multiple redundancy strategies to ensure critical fab production uptime.
