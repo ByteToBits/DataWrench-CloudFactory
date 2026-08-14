@@ -28,3 +28,10 @@ For the actual deployment, the project will use a Homelab Architecture to facili
 In addition, the project is designed in such a manner that it can be deployed on-premises or on the cloud, depending on project requirements. It adopts a Secure-by-Design principle by applying industry standard designs to ensure compliance with IEC 62443 and ISA-95 (Purdue Model).
 
 ![Network Architecture](CloudFactory/doc/Network%20Architecture.jpg)
+
+*** 
+
+## UML State Machine Diagram
+The Equipment Data Structure and Behavior is modelled using a UML State Machine Diagram. It is primarily based on the SEMI Standard E30: General Equipment Model (GEM) to better abstract and encapsulate common attributes and functionalities of different Fab Equipment.
+
+![UML State Machine Diagram](https://drive.google.com/file/d/18_kRfBLPoaVilJObKqEULvAdJe0BZcmN/view?usp=sharing)
