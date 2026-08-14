@@ -34,4 +34,4 @@ In addition, the project is designed in such a manner that it can be deployed on
 ## UML State Machine Diagram
 The Equipment Data Structure and Behavior is modelled using a UML State Machine Diagram. It is primarily based on the SEMI Standard E30: General Equipment Model (GEM) to better abstract and encapsulate common attributes and functionalities of different Fab Equipment.
 
-![UML State Machine Diagram](https://drive.google.com/file/d/1lF6w2vmGnaQAhAVNsmvtFX2KXFww9YUX/view?usp=sharing)
+![UML State Machine Diagram](https://drive.google.com/file/d/1lF6w2vmGnaQAhAVNsmvtFX2KXFww9YUX/view)
