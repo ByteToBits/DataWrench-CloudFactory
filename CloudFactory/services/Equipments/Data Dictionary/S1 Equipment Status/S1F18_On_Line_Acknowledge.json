@@ -1,0 +1,16 @@
+{
+   "header": {
+      "doc": "On-Line Acknowledge",
+      "stream": 1,
+      "function": 18,
+      "reply": true,
+      "direction": "E->H"
+   },
+   "body": [
+      {
+         "doc": "ONLACK: 0 = accepted, 1 = not allowed, 2 = already on-line",
+         "format": "B",
+         "value": 0
+      }
+   ]
+}

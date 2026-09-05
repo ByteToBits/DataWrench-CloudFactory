@@ -1,0 +1,16 @@
+{
+   "header": {
+      "doc": "Off-Line Acknowledge",
+      "stream": 1,
+      "function": 16,
+      "reply": true,
+      "direction": "E->H"
+   },
+   "body": [
+      {
+         "doc": "OFLACK: 0 = off-line accepted",
+         "format": "B",
+         "value": 0
+      }
+   ]
+}

@@ -1,0 +1,11 @@
+{
+   "header": {
+      "doc": "Request OFF-LINE - ask equipment to leave host control",
+      "stream": 1,
+      "function": 15,
+      "reply": false,
+      "wbit": true,
+      "direction": "H->E"
+   },
+   "body": []
+}

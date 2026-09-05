@@ -1,0 +1,27 @@
+{
+   "header": {
+      "doc": "Selected Equipment Status Data - values in request order, no SVIDs",
+      "stream": 1,
+      "function": 4,
+      "reply": true,
+      "direction": "E->H"
+   },
+   "body": [
+      {
+         "doc": "List of SV values, positionally matched to the S1F3 request",
+         "format": "L",
+         "items": [
+            {
+               "doc": "SV value for first requested SVID",
+               "format": "U4",
+               "value": 23
+            },
+            {
+               "doc": "SV value for second requested SVID",
+               "format": "A",
+               "value": "IDLE"
+            }
+         ]
+      }
+   ]
+}

@@ -1,0 +1,27 @@
+{
+   "header": {
+      "doc": "On Line Data - equipment reply to host S1F1",
+      "stream": 1,
+      "function": 2,
+      "reply": true,
+      "direction": "E->H"
+   },
+   "body": [
+      {
+         "doc": "Equipment on-line data",
+         "format": "L",
+         "items": [
+            {
+               "doc": "MDLN, equipment model type",
+               "format": "A",
+               "value": "EQ-01"
+            },
+            {
+               "doc": "SOFTREV, software revision",
+               "format": "A",
+               "value": "1.0.0"
+            }
+         ]
+      }
+   ]
+}

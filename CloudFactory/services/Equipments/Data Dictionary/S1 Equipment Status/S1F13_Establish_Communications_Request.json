@@ -1,0 +1,28 @@
+{
+   "header": {
+      "doc": "Establish Communications Request - opens the GEM comms state model",
+      "stream": 1,
+      "function": 13,
+      "reply": false,
+      "wbit": true,
+      "direction": "both"
+   },
+   "body": [
+      {
+         "doc": "Sender identification. Host may send a zero-length list.",
+         "format": "L",
+         "items": [
+            {
+               "doc": "MDLN, equipment model type",
+               "format": "A",
+               "value": "EQ-01"
+            },
+            {
+               "doc": "SOFTREV, software revision",
+               "format": "A",
+               "value": "1.0.0"
+            }
+         ]
+      }
+   ]
+}

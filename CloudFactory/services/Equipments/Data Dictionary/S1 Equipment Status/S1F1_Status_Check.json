@@ -1,9 +1,0 @@
-{
-   "header": {
-      "doc": "Commununication Status Check Request",
-      "stream": 1,
-      "function": 1,
-      "reply": true
-   },
-   "body": []
-}

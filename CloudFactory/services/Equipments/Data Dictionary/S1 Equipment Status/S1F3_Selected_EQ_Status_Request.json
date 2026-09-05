@@ -1,0 +1,28 @@
+{
+   "header": {
+      "doc": "Selected Equipment Status Request - poll named status variables",
+      "stream": 1,
+      "function": 3,
+      "reply": false,
+      "wbit": true,
+      "direction": "H->E"
+   },
+   "body": [
+      {
+         "doc": "List of SVIDs. Empty list requests all status variables.",
+         "format": "L",
+         "items": [
+            {
+               "doc": "SVID, status variable ID",
+               "format": "U4",
+               "value": 1001
+            },
+            {
+               "doc": "SVID, status variable ID",
+               "format": "U4",
+               "value": 1002
+            }
+         ]
+      }
+   ]
+}

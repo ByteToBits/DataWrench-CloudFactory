@@ -1,0 +1,17 @@
+{
+   "header": {
+      "doc": "Status Variable Namelist Request - discover available SVIDs",
+      "stream": 1,
+      "function": 11,
+      "reply": false,
+      "wbit": true,
+      "direction": "H->E"
+   },
+   "body": [
+      {
+         "doc": "List of SVIDs. Empty list requests the full namelist.",
+         "format": "L",
+         "items": []
+      }
+   ]
+}

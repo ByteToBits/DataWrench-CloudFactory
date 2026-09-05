@@ -1,0 +1,11 @@
+{
+   "header": {
+      "doc": "Request ON-LINE - ask equipment to enter host-controlled state",
+      "stream": 1,
+      "function": 17,
+      "reply": false,
+      "wbit": true,
+      "direction": "H->E"
+   },
+   "body": []
+}

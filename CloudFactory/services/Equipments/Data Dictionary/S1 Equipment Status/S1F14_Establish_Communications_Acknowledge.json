@@ -1,0 +1,38 @@
+{
+   "header": {
+      "doc": "Establish Communications Acknowledge - COMMACK plus sender ID",
+      "stream": 1,
+      "function": 14,
+      "reply": true,
+      "direction": "both"
+   },
+   "body": [
+      {
+         "doc": "Acknowledge and identification",
+         "format": "L",
+         "items": [
+            {
+               "doc": "COMMACK: 0 = accepted, 1 = denied, try again later",
+               "format": "B",
+               "value": 0
+            },
+            {
+               "doc": "Responder identification. May be a zero-length list from host.",
+               "format": "L",
+               "items": [
+                  {
+                     "doc": "MDLN, equipment model type",
+                     "format": "A",
+                     "value": "EQ-01"
+                  },
+                  {
+                     "doc": "SOFTREV, software revision",
+                     "format": "A",
+                     "value": "1.0.0"
+                  }
+               ]
+            }
+         ]
+      }
+   ]
+}

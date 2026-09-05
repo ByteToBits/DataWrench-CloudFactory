@@ -1,0 +1,59 @@
+{
+   "header": {
+      "doc": "Status Variable Namelist Reply - SVID, name and units per variable",
+      "stream": 1,
+      "function": 12,
+      "reply": true,
+      "direction": "E->H"
+   },
+   "body": [
+      {
+         "doc": "List of status variable descriptors",
+         "format": "L",
+         "items": [
+            {
+               "doc": "Status variable descriptor",
+               "format": "L",
+               "items": [
+                  {
+                     "doc": "SVID, status variable ID",
+                     "format": "U4",
+                     "value": 1001
+                  },
+                  {
+                     "doc": "SVNAME, status variable name",
+                     "format": "A",
+                     "value": "ChamberTemp"
+                  },
+                  {
+                     "doc": "UNITS, engineering units. Empty if unitless.",
+                     "format": "A",
+                     "value": "degC"
+                  }
+               ]
+            },
+            {
+               "doc": "Status variable descriptor",
+               "format": "L",
+               "items": [
+                  {
+                     "doc": "SVID, status variable ID",
+                     "format": "U4",
+                     "value": 1002
+                  },
+                  {
+                     "doc": "SVNAME, status variable name",
+                     "format": "A",
+                     "value": "ProcessState"
+                  },
+                  {
+                     "doc": "UNITS, empty for unitless variables",
+                     "format": "A",
+                     "value": ""
+                  }
+               ]
+            }
+         ]
+      }
+   ]
+}

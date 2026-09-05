@@ -1,0 +1,11 @@
+{
+   "header": {
+      "doc": "Are You There Request - liveness probe, header-only message",
+      "stream": 1,
+      "function": 1,
+      "reply": false,
+      "wbit": true,
+      "direction": "both"
+   },
+   "body": []
+}
