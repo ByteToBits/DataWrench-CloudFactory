@@ -10,12 +10,28 @@ The SECS-II **Stream number**, the top-level category a message belongs to.
 
 | Stream | Category |
 |---|---|
+| 0 | Reserved (no stream) |
 | 1 | Equipment status |
 | 2 | Equipment control and diagnostics |
-| 5 | Alarm management |
+| 3 | Material status |
+| 4 | Material control |
+| 5 | Alarm management / exception handling |
 | 6 | Data collection / event reporting |
+| 7 | Process program (recipe) management |
+| 8 | Control program transfer |
 | 9 | System errors |
 | 10 | Terminal services (operator messages) |
+| 11 | Withdrawn (formerly host file services) |
+| 12 | Wafer mapping |
+| 13 | Data set transfers |
+| 14 | Object services |
+| 15 | Recipe management |
+| 16 | Processing management (job control) |
+| 17 | Equipment control and diagnostics, enhanced |
+| 18 | Subsystem control and data |
+| 19 | Recipe and parameter management |
+| 21 | Item transfer |
+| 64–127 | User-defined |
 
 ### **function**
 The **Function number** within that stream, identifies the specific message. 
