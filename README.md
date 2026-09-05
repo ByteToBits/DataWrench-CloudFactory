@@ -17,21 +17,11 @@ Documentation & Resources: [Google Drive](https://drive.google.com/drive/folders
 ## System Architecture
 The project adopts a Microservice Architecture to allow for scalable resources and services depending on project requirements and budget. It can be deployed on-premises or on the cloud, and scaled in performance by adding more nodes. Fault tolerance is achieved by adopting multiple redundancy strategies to ensure critical fab production uptime.
 
-![System Architecture](CloudFactory/doc/System%20Architecture.jpg)
+![System Architecture](https://drive.google.com/uc?export=view&id=169hLpwP73VGz7dwqfqrOWhszBZSwi2_U)
 
 ## Homelab Architecture
-For the actual deployment, the project will use a Homelab Architecture to facilitate the development of the project. This architecture will also resemble the on-premises deployment in actual production time.
+The project is designed in such a manner that it can be deployed on-premises or on the cloud, depending on project requirements. It adopts a Secure-by-Design principle by applying industry standard designs to ensure compliance with IEC 62443 and ISA-95 Purdue Model.
 
-![Homelab Architecture](https://drive.google.com/uc?export=view&id=1yyqAfiGvXpWQoqro-moSym82BkwaIWzq)
+However, for the actual deployment, the project will use a Homelab Architecture to facilitate the development of the project. This architecture will also resemble the on-premises deployment in actual production time.
 
-## Commerical Network Architecture
-In addition, the project is designed in such a manner that it can be deployed on-premises or on the cloud, depending on project requirements. It adopts a Secure-by-Design principle by applying industry standard designs to ensure compliance with IEC 62443 and ISA-95 (Purdue Model).
-
-![Network Architecture](CloudFactory/doc/Network%20Architecture.jpg)
-
-*** 
-
-## UML State Machine Diagram
-The Equipment data structure and behaviour is modelled using a UML State Machine Diagram. The communication and control state machines follow SEMI E30 General Equipment Model (GEM). Modelling it this way lets the base equipment class encapsulate attributes and behaviour common to every Fab Equipment subclass.
-
-![UML State Machine Diagram](https://drive.google.com/thumbnail?id=1lF6w2vmGnaQAhAVNsmvtFX2KXFww9YUX&sz=w2000)
+![Homelab Architecture](https://drive.google.com/uc?export=view&id=1vyy9Ax2i-IHAYhs1DvDP_zFQer5omg3S)
