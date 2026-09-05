@@ -1,4 +1,4 @@
-# SECS-II message JSON field reference
+# SECS-II message JSON Field Reference
 
 ## Header fields
 
