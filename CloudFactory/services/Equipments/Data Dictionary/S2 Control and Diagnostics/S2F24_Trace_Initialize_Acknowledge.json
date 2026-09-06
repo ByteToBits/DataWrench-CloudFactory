@@ -1,0 +1,16 @@
+{
+   "header": {
+      "doc": "Trace Initialize Acknowledge",
+      "stream": 2,
+      "function": 24,
+      "reply": true,
+      "direction": "E->H"
+   },
+   "body": [
+      {
+         "doc": "TIAACK: 0 = accepted, 1 = too many traces, 2 = no more space, 3 = invalid period, 4 = unknown SVID, 5 = invalid SVID for trace",
+         "format": "B",
+         "value": 0
+      }
+   ]
+}

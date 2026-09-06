@@ -1,0 +1,53 @@
+{
+   "header": {
+      "doc": "Equipment Constant Namelist - ECID, name, min, max, default, units",
+      "stream": 2,
+      "function": 30,
+      "reply": true,
+      "direction": "E->H"
+   },
+   "body": [
+      {
+         "doc": "List of equipment constant descriptors",
+         "format": "L",
+         "items": [
+            {
+               "doc": "Equipment constant descriptor",
+               "format": "L",
+               "items": [
+                  {
+                     "doc": "ECID, equipment constant ID",
+                     "format": "U4",
+                     "value": 5001
+                  },
+                  {
+                     "doc": "ECNAME, equipment constant name",
+                     "format": "A",
+                     "value": "CycleTimeout"
+                  },
+                  {
+                     "doc": "ECMIN, minimum permitted value",
+                     "format": "U4",
+                     "value": 1
+                  },
+                  {
+                     "doc": "ECMAX, maximum permitted value",
+                     "format": "U4",
+                     "value": 3600
+                  },
+                  {
+                     "doc": "ECDEF, default value",
+                     "format": "U4",
+                     "value": 30
+                  },
+                  {
+                     "doc": "UNITS, engineering units. Empty if unitless.",
+                     "format": "A",
+                     "value": "sec"
+                  }
+               ]
+            }
+         ]
+      }
+   ]
+}

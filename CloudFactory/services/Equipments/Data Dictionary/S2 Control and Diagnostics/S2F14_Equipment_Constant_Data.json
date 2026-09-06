@@ -1,0 +1,22 @@
+{
+   "header": {
+      "doc": "Equipment Constant Data - values in request order, no ECIDs",
+      "stream": 2,
+      "function": 14,
+      "reply": true,
+      "direction": "E->H"
+   },
+   "body": [
+      {
+         "doc": "List of ECV values, positionally matched to the S2F13 request",
+         "format": "L",
+         "items": [
+            {
+               "doc": "ECV, equipment constant value",
+               "format": "U4",
+               "value": 30
+            }
+         ]
+      }
+   ]
+}

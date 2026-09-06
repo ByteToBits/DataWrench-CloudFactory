@@ -1,0 +1,16 @@
+{
+   "header": {
+      "doc": "Date and Time Data - TIME as YYYYMMDDhhmmsscc (A,16)",
+      "stream": 2,
+      "function": 18,
+      "reply": true,
+      "direction": "E->H"
+   },
+   "body": [
+      {
+         "doc": "TIME, current equipment date and time",
+         "format": "A",
+         "value": "2026090614302500"
+      }
+   ]
+}

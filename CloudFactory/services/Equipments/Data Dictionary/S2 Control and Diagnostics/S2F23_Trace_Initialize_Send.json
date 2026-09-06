@@ -1,0 +1,49 @@
+{
+   "header": {
+      "doc": "Trace Initialize Send - start periodic SVID sampling",
+      "stream": 2,
+      "function": 23,
+      "reply": false,
+      "wbit": true,
+      "direction": "H->E"
+   },
+   "body": [
+      {
+         "doc": "Trace definition",
+         "format": "L",
+         "items": [
+            {
+               "doc": "TRID, trace request ID",
+               "format": "U4",
+               "value": 1
+            },
+            {
+               "doc": "DSPER, sample period as hhmmss",
+               "format": "A",
+               "value": "000010"
+            },
+            {
+               "doc": "TOTSMP, total samples to collect. 0 stops this TRID.",
+               "format": "U4",
+               "value": 100
+            },
+            {
+               "doc": "REPGSZ, samples per S6F1 report group",
+               "format": "U4",
+               "value": 10
+            },
+            {
+               "doc": "List of SVIDs to sample",
+               "format": "L",
+               "items": [
+                  {
+                     "doc": "SVID, status variable ID",
+                     "format": "U4",
+                     "value": 1001
+                  }
+               ]
+            }
+         ]
+      }
+   ]
+}

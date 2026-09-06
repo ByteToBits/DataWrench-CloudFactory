@@ -1,0 +1,34 @@
+{
+   "header": {
+      "doc": "New Equipment Constant Send - write tunable parameters",
+      "stream": 2,
+      "function": 15,
+      "reply": false,
+      "wbit": true,
+      "direction": "H->E"
+   },
+   "body": [
+      {
+         "doc": "List of constant assignments",
+         "format": "L",
+         "items": [
+            {
+               "doc": "ECID and new value pair",
+               "format": "L",
+               "items": [
+                  {
+                     "doc": "ECID, equipment constant ID",
+                     "format": "U4",
+                     "value": 5001
+                  },
+                  {
+                     "doc": "ECV, new equipment constant value",
+                     "format": "U4",
+                     "value": 45
+                  }
+               ]
+            }
+         ]
+      }
+   ]
+}

@@ -1,0 +1,16 @@
+{
+   "header": {
+      "doc": "New Equipment Constant Acknowledge",
+      "stream": 2,
+      "function": 16,
+      "reply": true,
+      "direction": "E->H"
+   },
+   "body": [
+      {
+         "doc": "EAC: 0 = accepted, 1 = out of range, 2 = busy, 3 = ECID unknown",
+         "format": "B",
+         "value": 0
+      }
+   ]
+}

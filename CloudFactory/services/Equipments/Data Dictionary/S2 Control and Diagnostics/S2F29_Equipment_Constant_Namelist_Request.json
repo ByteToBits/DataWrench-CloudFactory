@@ -1,0 +1,17 @@
+{
+   "header": {
+      "doc": "Equipment Constant Namelist Request - discover available ECIDs",
+      "stream": 2,
+      "function": 29,
+      "reply": false,
+      "wbit": true,
+      "direction": "H->E"
+   },
+   "body": [
+      {
+         "doc": "List of ECIDs. Empty list requests the full namelist.",
+         "format": "L",
+         "items": []
+      }
+   ]
+}

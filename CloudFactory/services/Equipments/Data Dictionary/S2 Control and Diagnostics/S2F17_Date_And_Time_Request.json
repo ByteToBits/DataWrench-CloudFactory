@@ -1,0 +1,11 @@
+{
+   "header": {
+      "doc": "Date and Time Request - read the equipment clock",
+      "stream": 2,
+      "function": 17,
+      "reply": false,
+      "wbit": true,
+      "direction": "H->E"
+   },
+   "body": []
+}

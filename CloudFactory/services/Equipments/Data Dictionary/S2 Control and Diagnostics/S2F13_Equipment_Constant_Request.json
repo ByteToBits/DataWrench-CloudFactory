@@ -1,0 +1,23 @@
+{
+   "header": {
+      "doc": "Equipment Constant Request - read tunable parameters by ECID",
+      "stream": 2,
+      "function": 13,
+      "reply": false,
+      "wbit": true,
+      "direction": "H->E"
+   },
+   "body": [
+      {
+         "doc": "List of ECIDs. Empty list requests all equipment constants.",
+         "format": "L",
+         "items": [
+            {
+               "doc": "ECID, equipment constant ID",
+               "format": "U4",
+               "value": 5001
+            }
+         ]
+      }
+   ]
+}
