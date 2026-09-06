@@ -1,0 +1,58 @@
+
+---
+- name: Update all packages
+  hosts: all
+  gather_facts: true
+  become: true
+  serial: 1          # one host at a time — avoids taking the whole cluster down at once
+
+  tasks:
+    - name: Disable unattended-upgrades
+      ansible.builtin.systemd:
+        name: unattended-upgrades
+        enabled: false
+        state: stopped
+      when: ansible_facts['os_family'] == "Debian"
+
+    - name: Update packages (RHEL)
+      ansible.builtin.dnf:
+        name: "*"
+        state: latest
+        update_cache: true
+      when: ansible_facts['os_family'] == "RedHat"
+      register: dnf_result
+
+    - name: Update apt cache (Ubuntu)
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+      when: ansible_facts['os_family'] == "Debian"
+
+    - name: Upgrade packages (Ubuntu)
+      ansible.builtin.apt:
+        upgrade: dist
+        autoremove: true
+      when: ansible_facts['os_family'] == "Debian"
+      register: apt_result
+
+    - name: Check whether a reboot is required (RHEL)
+      ansible.builtin.command: dnf needs-restarting -r
+      register: rhel_reboot
+      changed_when: false
+      check_mode: false
+      failed_when: rhel_reboot.rc not in [0, 1]
+      when: ansible_facts['os_family'] == "RedHat"
+
+    - name: Check whether a reboot is required (Ubuntu)
+      ansible.builtin.stat:
+        path: /var/run/reboot-required
+      register: ubuntu_reboot
+      when: ansible_facts['os_family'] == "Debian"
+
+    - name: Report reboot status
+      ansible.builtin.debug:
+        msg: >-
+          {{ inventory_hostname }}: reboot
+          {{ 'REQUIRED' if (rhel_reboot.rc | default(0) == 1)
+             or (ubuntu_reboot.stat.exists | default(false))
+             else 'not needed' }}
