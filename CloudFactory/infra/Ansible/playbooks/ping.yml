@@ -1,0 +1,17 @@
+---
+- name: Verify connectivity to all homelab hosts
+  hosts: all
+  gather_facts: true
+  become: false
+
+  tasks:
+    - name: Ping host
+      ansible.builtin.ping:
+
+    - name: Report OS and kernel
+      ansible.builtin.debug:
+        msg: >-
+          {{ inventory_hostname }} —
+          {{ ansible_distribution }} {{ ansible_distribution_version }},
+          kernel {{ ansible_kernel }},
+          python {{ ansible_python_version }}

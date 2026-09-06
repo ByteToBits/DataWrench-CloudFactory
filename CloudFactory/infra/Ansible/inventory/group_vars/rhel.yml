@@ -1,0 +1,3 @@
+---
+package_manager: dnf
+firewall_service: firewalld
