@@ -86,3 +86,4 @@ tmp/
 .DS_Store
 Thumbs.db
 desktop.ini
+CloudFactory/infra/Ansible/inventory/group_vars/all.yml
