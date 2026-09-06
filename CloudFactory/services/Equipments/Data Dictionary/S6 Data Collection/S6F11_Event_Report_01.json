@@ -1,48 +1,48 @@
 {
-  "header": 
-      { "doc": "Event Report Send", 
-         "stream": 6, 
-         "function": 11, 
-         "reply": true 
+  "header":
+      { "doc": "Event Report Send",
+         "stream": 6,
+         "function": 11,
+         "reply": true
       },
   "body": [
-      { "doc": "DATAID, Data ID", 
-         "format": "U4", 
-         "value": 1001 
+      { "doc": "DATAID, Data ID",
+         "format": "U4",
+         "value": 1001
       },
-      { "doc": "CEID, Collection Event ID", 
-         "format": "U4", 
-         "value": 100 
+      { "doc": "CEID, Collection Event ID",
+         "format": "U4",
+         "value": 100
       },
       [
-         { "doc": "RPTID, Report ID", 
-            "format": "U4", 
-            "value": 1 
+         { "doc": "RPTID, Report ID",
+            "format": "U4",
+            "value": 1
          },
          [
-            { "doc": "Alarm Status", 
-               "format": "U2", 
-               "value": 0 
+            { "doc": "Alarm Status",
+               "format": "U2",
+               "value": 0
             },
-            { "doc": "Equipment Status", 
-               "format": "U2", 
-               "value": 3 
+            { "doc": "Equipment Status",
+               "format": "U2",
+               "value": 3
             },
-            { "doc": "Equipment Operation Status", 
-               "format": "U2", 
-               "value": 0 
+            { "doc": "Equipment Operation Status",
+               "format": "U2",
+               "value": 0
             },
-            { "doc": "Substrate Waiting Status", 
-               "format": "U2", 
-               "value": 1 
+            { "doc": "Substrate Waiting Status",
+               "format": "U2",
+               "value": 1
             },
-            { "doc": "Equipment Control Status", 
-               "format": "U2", 
-               "value": 1 
+            { "doc": "Equipment Control Status",
+               "format": "U2",
+               "value": 1
             },
-            { "doc": "Equipment Change Status", 
-               "format": "U2", 
-               "value": 0 
+            { "doc": "Equipment Change Status",
+               "format": "U2",
+               "value": 0
             }
          ]
       ]

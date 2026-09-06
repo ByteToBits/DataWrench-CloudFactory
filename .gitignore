@@ -1,2 +1,88 @@
+# --- Existing ---
 *.bkp
-/CloudFactory/secrets
+/CloudFactory/secrets/
+
+# --- Python / uv ---
+**/.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+dist/
+build/
+
+# --- Go ---
+*.exe
+*.test
+*.out
+vendor/
+bin/
+
+# --- Node / frontend ---
+node_modules/
+.next/
+.nuxt/
+.parcel-cache/
+*.tsbuildinfo
+npm-debug.log*
+yarn-error.log*
+
+# --- Ansible ---
+*.retry
+**/ansible/collections/
+.ansible/
+inventory/*.local
+vault-password*
+
+# --- Terraform / OpenTofu ---
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!example.tfvars
+crash.log
+
+# --- Kubernetes / Helm ---
+kubeconfig
+*.kubeconfig
+charts/**/charts/
+**/Chart.lock
+
+# --- Docker ---
+docker-compose.override.yml
+
+# --- Secrets & env ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+!**/testdata/*.key
+*_rsa
+*_ed25519
+credentials.json
+secrets.yml
+!secrets.example.yml
+
+# --- Logs & data ---
+*.log
+logs/
+*.db
+*.sqlite3
+tmp/
+
+# --- IDE ---
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+*.iml
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+desktop.ini

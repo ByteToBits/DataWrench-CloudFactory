@@ -1,14 +1,14 @@
 {
-  "header": 
-      { "doc": "Event Report Acknowledge", 
-         "stream": 6, 
-         "function": 12, 
-         "reply": false 
+  "header":
+      { "doc": "Event Report Acknowledge",
+         "stream": 6,
+         "function": 12,
+         "reply": false
       },
   "body": [
-      { "doc": "ACKC6, Acknowledge Code (0 = accepted)", 
-         "format": "B", 
-         "value": 0 
+      { "doc": "ACKC6, Acknowledge Code (0 = accepted)",
+         "format": "B",
+         "value": 0
       }
   ]
 }

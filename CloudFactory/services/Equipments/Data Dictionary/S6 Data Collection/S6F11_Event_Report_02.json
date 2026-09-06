@@ -1,72 +1,72 @@
 {
-  "header": 
-      { "doc": "Event Report Send", 
-         "stream": 6, 
-         "function": 11, 
-         "reply": true 
+  "header":
+      { "doc": "Event Report Send",
+         "stream": 6,
+         "function": 11,
+         "reply": true
       },
   "body": [
-      { "doc": "DATAID, Data ID", 
-         "format": "U4", 
-         "value": 1004 
+      { "doc": "DATAID, Data ID",
+         "format": "U4",
+         "value": 1004
       },
-      { "doc": "CEID, Collection Event ID", 
-         "format": "U4", 
-         "value": 101 
+      { "doc": "CEID, Collection Event ID",
+         "format": "U4",
+         "value": 101
       },
       [
-         { "doc": "RPTID, Report ID", 
-            "format": "U4", 
-            "value": 4 
+         { "doc": "RPTID, Report ID",
+            "format": "U4",
+            "value": 4
          },
          [
-            { "doc": "Port 1 Upstream Waiting Time", 
-               "format": "U2", 
-               "value": 180 
+            { "doc": "Port 1 Upstream Waiting Time",
+               "format": "U2",
+               "value": 180
             },
-            { "doc": "Port 2 Upstream Waiting Time", 
-               "format": "U2", 
-               "value": 180 
+            { "doc": "Port 2 Upstream Waiting Time",
+               "format": "U2",
+               "value": 180
             },
-            { "doc": "Port 1 Downstream Waiting Time", 
-               "format": "U2", 
-               "value": 180 
+            { "doc": "Port 1 Downstream Waiting Time",
+               "format": "U2",
+               "value": 180
             },
-            { "doc": "Port 2 Downstream Waiting Time", 
-               "format": "U2", 
-               "value": 180 
+            { "doc": "Port 2 Downstream Waiting Time",
+               "format": "U2",
+               "value": 180
             },
-            { "doc": "Ejection Cycle Time (Port 1)", 
-               "format": "U2", 
-               "value": 180 
+            { "doc": "Ejection Cycle Time (Port 1)",
+               "format": "U2",
+               "value": 180
             },
-            { "doc": "Ejection Cycle Time (Port 2)", 
-               "format": "U2", 
-               "value": 180 
+            { "doc": "Ejection Cycle Time (Port 2)",
+               "format": "U2",
+               "value": 180
             },
-            { "doc": "Processing Result Counter", 
-               "format": "U4", 
-               "value": 1250 
+            { "doc": "Processing Result Counter",
+               "format": "U4",
+               "value": 1250
             },
-            { "doc": "Pending Quantity", 
-               "format": "U2", 
-               "value": 15 
+            { "doc": "Pending Quantity",
+               "format": "U2",
+               "value": 15
             },
-            { "doc": "Signal Tower Status (Red)", 
-               "format": "U2", 
-               "value": 0 
+            { "doc": "Signal Tower Status (Red)",
+               "format": "U2",
+               "value": 0
             },
-            { "doc": "Signal Tower Status (Yellow)", 
-               "format": "U2", 
-               "value": 0 
+            { "doc": "Signal Tower Status (Yellow)",
+               "format": "U2",
+               "value": 0
             },
-            { "doc": "Signal Tower Status (Green)", 
-               "format": "U2", 
-               "value": 1 
+            { "doc": "Signal Tower Status (Green)",
+               "format": "U2",
+               "value": 1
             },
-            { "doc": "Signal Tower Status (Buzzer)", 
-               "format": "U2", 
-               "value": 0 
+            { "doc": "Signal Tower Status (Buzzer)",
+               "format": "U2",
+               "value": 0
             }
          ]
       ]

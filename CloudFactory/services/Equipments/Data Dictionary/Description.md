@@ -34,7 +34,7 @@ The SECS-II **Stream number**, the top-level category a message belongs to.
 | 64–127 | User-defined |
 
 ### **function**
-The **Function number** within that stream, identifies the specific message. 
+The **Function number** within that stream, identifies the specific message.
 
 Strict rule: Requests are always odd-numbered, Responses are always the request's function + 1.
 

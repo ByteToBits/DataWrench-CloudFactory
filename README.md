@@ -8,7 +8,7 @@
 
 This repository contains my open-source passion project for a Manufacturing Execution System (MES). It includes all backend services for the Kubernetes clusters, along with other resources such as the SQL schema and SEC/GEM host. The project provides a scalable and flexible MES solution, ranging from small-scale manufacturing to critical high-fault-tolerant, high-throughput semiconductor manufacturing.
 
-Front-End Demo: 
+Front-End Demo:
 
 YouTube Demo:
 

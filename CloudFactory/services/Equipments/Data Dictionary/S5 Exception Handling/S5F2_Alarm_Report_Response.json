@@ -1,14 +1,14 @@
 {
-  "header": 
-      { "doc": "Alarm Report Acknowledge", 
-         "stream": 5, 
-         "function": 2, 
-         "reply": false 
+  "header":
+      { "doc": "Alarm Report Acknowledge",
+         "stream": 5,
+         "function": 2,
+         "reply": false
       },
   "body": [
-      { "doc": "ACKC5, Acknowledge Code (0 = accepted)", 
-         "format": "B", 
-         "value": 0 
+      { "doc": "ACKC5, Acknowledge Code (0 = accepted)",
+         "format": "B",
+         "value": 0
       }
   ]
 }

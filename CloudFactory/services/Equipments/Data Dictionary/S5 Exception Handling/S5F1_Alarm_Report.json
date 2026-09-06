@@ -1,22 +1,22 @@
 {
-  "header": 
-      { "doc": "Alarm Report Send", 
-         "stream": 5, 
-         "function": 1, 
-         "reply": true 
+  "header":
+      { "doc": "Alarm Report Send",
+         "stream": 5,
+         "function": 1,
+         "reply": true
       },
   "body": [
-      { "doc": "ALCD, Alarm Code (set/clear bit + category)", 
-         "format": "B", 
-         "value": 128 
+      { "doc": "ALCD, Alarm Code (set/clear bit + category)",
+         "format": "B",
+         "value": 128
       },
-      { "doc": "ALID, Alarm ID", 
-         "format": "U4", 
-         "value": 1 
+      { "doc": "ALID, Alarm ID",
+         "format": "U4",
+         "value": 1
       },
-      { "doc": "ALTX, Alarm Text", 
-         "format": "A", 
-         "value": "Liquid level below minimum" 
+      { "doc": "ALTX, Alarm Text",
+         "format": "A",
+         "value": "Liquid level below minimum"
       }
   ],
   "maps_to_custom_interface": "1.3 EQ Information Report (Alarm Status field + Machine Error Codes group)"
