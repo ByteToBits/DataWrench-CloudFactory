@@ -1,0 +1,5 @@
+---
+k8s_version: "1.37"
+k8s_patch_version: "1.37.0"
+crio_version: "1.36"
+crio_patch_version: "1.36.5-150500.1.1"
