@@ -1,0 +1,47 @@
+---
+- name: Configure NTP
+  hosts: all
+  become: true
+  vars:
+    ntp_servers:
+      - "{{ ansible_host.split('.')[0:3] | join('.') }}.1"
+  tasks:
+    - name: Mask systemd-timesyncd
+      ansible.builtin.systemd:
+        name: systemd-timesyncd
+        state: stopped
+        enabled: false
+        masked: true
+      when: ansible_facts['os_family'] == "Debian"
+      failed_when: false
+
+    - name: Install chrony
+      ansible.builtin.package:
+        name: chrony
+        state: present
+
+    - name: Deploy chrony config
+      ansible.builtin.copy:
+        content: |
+          # Managed by Ansible
+          {% for s in ntp_servers %}
+          server {{ s }} iburst
+          {% endfor %}
+          driftfile /var/lib/chrony/drift
+          makestep 1.0 3
+          rtcsync
+        dest: "{{ '/etc/chrony.conf' if ansible_facts['os_family'] == 'RedHat' else '/etc/chrony/chrony.conf' }}"
+        mode: "0644"
+      notify: Restart chrony
+
+    - name: Enable chrony
+      ansible.builtin.systemd:
+        name: "{{ 'chronyd' if ansible_facts['os_family'] == 'RedHat' else 'chrony' }}"
+        state: started
+        enabled: true
+
+  handlers:
+    - name: Restart chrony
+      ansible.builtin.systemd:
+        name: "{{ 'chronyd' if ansible_facts['os_family'] == 'RedHat' else 'chrony' }}"
+        state: restarted
