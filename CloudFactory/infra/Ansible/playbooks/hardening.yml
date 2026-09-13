@@ -8,8 +8,7 @@
         content: |
           # Managed by Ansible
           PermitRootLogin no
-          PasswordAuthentication no
-          KbdInteractiveAuthentication no
+          PasswordAuthentication yes
         dest: /etc/ssh/sshd_config.d/10-hardening.conf
         owner: root
         group: root
