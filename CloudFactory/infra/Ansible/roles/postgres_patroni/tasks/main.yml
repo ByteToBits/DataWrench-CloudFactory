@@ -1,0 +1,130 @@
+---
+- name: Install PGDG repo
+  ansible.builtin.dnf:
+    name: https://download.postgresql.org/pub/repos/yum/reporpms/EL-10-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+    state: present
+    disable_gpg_check: true
+
+- name: Import PGDG GPG key
+  ansible.builtin.rpm_key:
+    key: /etc/pki/rpm-gpg/PGDG-RPM-GPG-KEY-RHEL
+    state: present
+
+- name: Install EPEL repo
+  ansible.builtin.dnf:
+    name: https://dl.fedoraproject.org/pub/epel/epel-release-latest-10.noarch.rpm
+    state: present
+    disable_gpg_check: true
+
+- name: Install PostgreSQL
+  ansible.builtin.dnf:
+    name:
+      - "postgresql{{ postgres_patroni_pg_major }}-server-{{ postgres_patroni_pg_version }}"
+      - "postgresql{{ postgres_patroni_pg_major }}-contrib-{{ postgres_patroni_pg_version }}"
+    state: present
+
+- name: Install Patroni with etcd support
+  ansible.builtin.dnf:
+    name: "patroni-etcd-{{ postgres_patroni_patroni_version }}"
+    state: present
+
+- name: Ensure PostgreSQL service is stopped and disabled
+  ansible.builtin.systemd:
+    name: "postgresql-{{ postgres_patroni_pg_major }}"
+    state: stopped
+    enabled: false
+  failed_when: false
+
+- name: Ensure Patroni service is stopped and disabled
+  ansible.builtin.systemd:
+    name: patroni
+    state: stopped
+    enabled: false
+  failed_when: false
+
+- name: Download etcd tarball
+  ansible.builtin.get_url:
+    url: >-
+      https://github.com/etcd-io/etcd/releases/download/v{{ postgres_patroni_etcd_version }}/etcd-v{{ postgres_patroni_etcd_version }}-linux-amd64.tar.gz
+    dest: "/tmp/etcd-v{{ postgres_patroni_etcd_version }}.tar.gz"
+    mode: "0644"
+
+- name: Extract etcd binaries
+  ansible.builtin.unarchive:
+    src: "/tmp/etcd-v{{ postgres_patroni_etcd_version }}.tar.gz"
+    dest: /usr/local/bin
+    remote_src: true
+    extra_opts:
+      - --strip-components=1
+      - --wildcards
+      - "*/etcd"
+      - "*/etcdctl"
+      - "*/etcdutl"
+    owner: root
+    group: root
+    mode: "0755"
+    creates: /usr/local/bin/etcd
+
+- name: Create etcd system user
+  ansible.builtin.user:
+    name: etcd
+    system: true
+    shell: /sbin/nologin
+    home: "{{ postgres_patroni_etcd_data_dir }}"
+    create_home: false
+
+- name: Create etcd data directory
+  ansible.builtin.file:
+    path: "{{ postgres_patroni_etcd_data_dir }}"
+    state: directory
+    owner: etcd
+    group: etcd
+    mode: "0700"
+
+- name: Install etcd systemd unit
+  ansible.builtin.copy:
+    content: |
+      [Unit]
+      Description=etcd
+      Documentation=https://etcd.io
+      After=network-online.target
+      Wants=network-online.target
+
+      [Service]
+      Type=notify
+      User=etcd
+      EnvironmentFile=-/etc/etcd/etcd.conf
+      ExecStart=/usr/local/bin/etcd
+      Restart=on-failure
+      RestartSec=5
+      LimitNOFILE=65536
+
+      [Install]
+      WantedBy=multi-user.target
+    dest: /etc/systemd/system/etcd.service
+    mode: "0644"
+
+- name: Create etcd config directory
+  ansible.builtin.file:
+    path: /etc/etcd
+    state: directory
+    mode: "0755"
+
+- name: Ensure etcd is stopped and disabled
+  ansible.builtin.systemd:
+    name: etcd
+    state: stopped
+    enabled: false
+    daemon_reload: true
+
+- name: Verify installed versions
+  ansible.builtin.command: "{{ item }}"
+  loop:
+    - /usr/local/bin/etcd --version
+    - patroni --version
+  changed_when: false
+  register: postgres_patroni_versions
+
+- name: Show versions
+  ansible.builtin.debug:
+    var: postgres_patroni_versions.results | map(attribute='stdout_lines') | list

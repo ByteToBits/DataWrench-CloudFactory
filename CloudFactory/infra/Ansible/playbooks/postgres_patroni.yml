@@ -1,0 +1,6 @@
+---
+- name: Install PostgreSQL, Patroni and etcd
+  hosts: patroni
+  become: true
+  roles:
+    - postgres_patroni

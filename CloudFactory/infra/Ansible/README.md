@@ -116,6 +116,31 @@ uv run ansible k8s_cluster -m shell -a "crictl --runtime-endpoint unix:///var/ru
 
 **Requires the QEMU Guest Agent enabled on the VM** (Proxmox → Options → QEMU Guest Agent). The VM needs a full stop/start afterwards — a reboot does not add the virtio device.
 
+
+### PostgreSQL, Patroni and etcd
+
+Installs the database stack on `patroni` hosts. Does **not** run `initdb`, bootstrap etcd, or start any service — those are post-clone steps.
+
+```bash
+uv run ansible-playbook playbooks/postgres_patroni.yml
+```
+
+Verify:
+
+```bash
+uv run ansible patroni -m shell -a "
+systemctl is-enabled postgresql-18 patroni etcd 2>&1;
+ls -la /var/lib/etcd/;
+ls -la /var/lib/pgsql/18/data
+" -b
+```
+
+Expect all three services `disabled`, `/var/lib/etcd` empty, and `/var/lib/pgsql/18/data` present but empty with mode `0700`. Patroni owns the data directory and runs `initdb` itself at bootstrap.
+
+Requires EPEL for `python3-click`, which RHEL 10 does not ship. The role installs it. EPEL is community-maintained and broad — for a production deployment, restrict it with `includepkgs=python3-click`.
+
+etcd is not packaged for RHEL 10 in any repo, so it installs from the upstream GitHub tarball with a hand-written systemd unit.
+
 ***
 
 ### Pinned versions
@@ -124,11 +149,17 @@ uv run ansible k8s_cluster -m shell -a "crictl --runtime-endpoint unix:///var/ru
 |---|---|---|
 | Kubernetes | 1.37.0 | `pkgs.k8s.io/core:/stable:/v1.37` |
 | CRI-O | 1.36.5 | `download.opensuse.org/repositories/isv:/cri-o:/stable:/v1.36` |
+| PostgreSQL | 18.6-4PGDG.rhel10.2 | PGDG |
+| Patroni | 4.1.5-1PGDG.rhel10.2 | PGDG (`patroni-etcd`) |
+| etcd | 3.7.1 | GitHub release tarball |
 | OS | RHEL 10.2 | Red Hat CDN |
 
 CRI-O intentionally trails Kubernetes by one minor — this is the upstream-documented pairing, not a workaround.
 
-Both repos carry an `exclude` line so `dnf update` cannot move these packages. Install tasks pass `disable_excludes` to bypass it deliberately.
+The Kubernetes and CRI-O repos carry an `exclude` line so `dnf update` cannot move those packages. Install tasks pass `disable_excludes` to bypass it deliberately. PostgreSQL and Patroni are pinned by explicit version string in the role defaults.
+
+Patroni's etcd cluster is **separate from the Kubernetes control plane's etcd**. Do not point one at the other — a cluster rebuild would take the database's coordination layer with it.
+
 
 ### Conventions
 

@@ -1,0 +1,6 @@
+---
+postgres_patroni_pg_major: "18"
+postgres_patroni_pg_version: "18.6-4PGDG.rhel10.2"
+postgres_patroni_patroni_version: "4.1.5-1PGDG.rhel10.2"
+postgres_patroni_etcd_version: "3.7.1"
+postgres_patroni_etcd_data_dir: /var/lib/etcd
