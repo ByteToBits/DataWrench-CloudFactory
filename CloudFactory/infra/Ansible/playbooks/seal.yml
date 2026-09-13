@@ -1,0 +1,103 @@
+---
+- name: Seal a VM for templating
+  hosts: template_source
+  become: true
+  gather_facts: true
+
+  pre_tasks:
+    - name: Require explicit confirmation
+      ansible.builtin.assert:
+        that:
+          - confirm_seal | default('') == 'yes'
+        fail_msg: >-
+          Refusing to seal. Re-run with -e confirm_seal=yes
+          and ensure only the template VM is in template_source.
+
+    - name: Refuse to seal more than one host
+      ansible.builtin.assert:
+        that:
+          - groups['template_source'] | length == 1
+        fail_msg: "template_source must contain exactly one host."
+
+  tasks:
+    - name: Assert no cluster state exists
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      register: seal_state
+      failed_when: seal_state.stat.exists
+      loop:
+        - /etc/kubernetes/pki
+        - /var/lib/kubelet/config.yaml
+        - /var/lib/etcd/member
+        - /var/lib/redis/dump.rdb
+
+    - name: Stop data services
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        state: stopped
+        enabled: false
+      loop:
+        - kubelet
+        - crio
+        - etcd
+        - patroni
+        - redis-server
+        - redis-sentinel
+        - docker
+      failed_when: false
+
+    - name: Remove SSH host keys
+      ansible.builtin.shell: rm -f /etc/ssh/ssh_host_*
+      changed_when: true
+
+    - name: Truncate machine-id
+      ansible.builtin.copy:
+        content: ""
+        dest: /etc/machine-id
+        mode: "0444"
+
+    - name: Link dbus machine-id
+      ansible.builtin.file:
+        src: /etc/machine-id
+        dest: /var/lib/dbus/machine-id
+        state: link
+        force: true
+
+    - name: Clean cloud-init state
+      ansible.builtin.command: cloud-init clean --logs --seed
+      changed_when: true
+      failed_when: false
+
+    - name: Clear hostname
+      ansible.builtin.copy:
+        content: ""
+        dest: /etc/hostname
+        mode: "0644"
+
+    - name: Clean package caches
+      ansible.builtin.shell: |
+        if command -v dnf >/dev/null; then dnf clean all; fi
+        if command -v apt-get >/dev/null; then apt-get clean; fi
+      changed_when: true
+
+    - name: Truncate logs
+      ansible.builtin.shell: |
+        find /var/log -type f -exec truncate -s 0 {} \;
+        rm -rf /var/log/journal/*
+      changed_when: true
+
+    - name: Clear shell history
+      ansible.builtin.shell: |
+        rm -f /root/.bash_history /home/*/.bash_history
+        history -c || true
+      changed_when: true
+
+    - name: Trim filesystems
+      ansible.builtin.command: fstrim -av
+      changed_when: true
+
+    - name: Seal complete
+      ansible.builtin.debug:
+        msg: >-
+          Sealed. Shut down now and convert to template.
+          Do NOT boot this VM again — booting regenerates identity.
