@@ -1,0 +1,68 @@
+---
+- name: Ensure keyrings directory exists
+  ansible.builtin.file:
+    path: /usr/share/keyrings
+    state: directory
+    mode: "0755"
+
+- name: Add Redis GPG key
+  ansible.builtin.get_url:
+    url: https://packages.redis.io/gpg
+    dest: /tmp/redis.gpg.asc
+    mode: "0644"
+
+- name: Dearmor Redis GPG key
+  ansible.builtin.command:
+    cmd: gpg --batch --yes --dearmor -o /usr/share/keyrings/redis-archive-keyring.gpg /tmp/redis.gpg.asc
+    creates: /usr/share/keyrings/redis-archive-keyring.gpg
+
+- name: Add Redis apt repository
+  ansible.builtin.apt_repository:
+    repo: >-
+      deb [signed-by=/usr/share/keyrings/redis-archive-keyring.gpg]
+      https://packages.redis.io/deb {{ redis_sentinel_repo_suite }} main
+    filename: redis
+    state: present
+    update_cache: true
+
+- name: Install Redis and Sentinel
+  ansible.builtin.apt:
+    name:
+      - "redis-server={{ redis_sentinel_version }}"
+      - "redis-sentinel={{ redis_sentinel_version }}"
+    state: present
+
+- name: Hold Redis packages at pinned version
+  ansible.builtin.dpkg_selections:
+    name: "{{ item }}"
+    selection: hold
+  loop:
+    - redis-server
+    - redis-sentinel
+
+- name: Stop and disable Redis and Sentinel
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    state: stopped
+    enabled: false
+  loop:
+    - redis-server
+    - redis-sentinel
+
+- name: Remove any auto-created Redis state
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /var/lib/redis/dump.rdb
+    - /var/lib/redis/appendonlydir
+    - /var/lib/redis/nodes.conf
+
+- name: Verify installed version
+  ansible.builtin.command: redis-server --version
+  changed_when: false
+  register: redis_sentinel_installed
+
+- name: Show version
+  ansible.builtin.debug:
+    var: redis_sentinel_installed.stdout

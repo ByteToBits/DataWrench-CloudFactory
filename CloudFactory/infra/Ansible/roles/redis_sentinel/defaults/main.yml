@@ -1,0 +1,3 @@
+---
+redis_sentinel_version: "6:8.10.1-1rl1~resolute1"
+redis_sentinel_repo_suite: resolute

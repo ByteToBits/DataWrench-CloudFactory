@@ -1,0 +1,6 @@
+---
+- name: Install Redis and Sentinel
+  hosts: cache
+  become: true
+  roles:
+    - redis_sentinel
