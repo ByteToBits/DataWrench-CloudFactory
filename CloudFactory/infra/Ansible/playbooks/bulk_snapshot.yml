@@ -1,0 +1,53 @@
+---
+- name: Bulk snapshot of the MES fleet
+  hosts: proxmox
+  gather_facts: false
+
+  vars:
+    snapshot_name: "{{ snapshot | mandatory }}"
+    snapshot_description: "{{ description | default('') }}"
+
+  pre_tasks:
+    - name: Validate snapshot name
+      ansible.builtin.assert:
+        that:
+          - snapshot_name is match('^[A-Za-z][A-Za-z0-9_-]{1,39}$')
+        fail_msg: >-
+          Snapshot names must start with a letter and use only
+          letters, numbers, - and _ (max 40 characters).
+
+  tasks:
+    - name: Check VM status
+      ansible.builtin.command: qm status {{ item }}
+      register: bulk_snapshot_before
+      loop: "{{ vm_ids }}"
+      changed_when: false
+
+    - name: Shut down running VMs
+      ansible.builtin.command: qm shutdown {{ item.item }} --timeout 180
+      loop: "{{ bulk_snapshot_before.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+      when: "'running' in item.stdout"
+      changed_when: true
+
+    - name: Wait until every VM is stopped
+      ansible.builtin.command: qm status {{ item }}
+      register: bulk_snapshot_status
+      until: "'stopped' in bulk_snapshot_status.stdout"
+      retries: 36
+      delay: 5
+      loop: "{{ vm_ids }}"
+      changed_when: false
+
+    - name: Take snapshot
+      ansible.builtin.command: >-
+        qm snapshot {{ item }} {{ snapshot_name }}
+        --description "{{ snapshot_description }}"
+      loop: "{{ vm_ids }}"
+      changed_when: true
+
+    - name: Start VMs
+      ansible.builtin.command: qm start {{ item }}
+      loop: "{{ vm_ids }}"
+      changed_when: true
