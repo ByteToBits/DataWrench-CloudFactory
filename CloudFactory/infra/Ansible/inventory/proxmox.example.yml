@@ -1,0 +1,13 @@
+all:
+  children:
+    proxmox:
+      hosts:
+        cf-hyp-01:
+          ansible_host: <hypervisor-ip>
+          vm_ids: [101, 102, 103, 104, 105]
+        cf-hyp-02:
+          ansible_host: <hypervisor-ip>
+          vm_ids: [201, 202, 203, 204, 205]
+        cf-hyp-03:
+          ansible_host: <hypervisor-ip>
+          vm_ids: [301, 302, 303, 304, 305]
