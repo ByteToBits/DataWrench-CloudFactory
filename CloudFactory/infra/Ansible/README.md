@@ -371,6 +371,40 @@ uv run ansible cf-mes-db-01 -b -m shell -a "sudo -u postgres patronictl -c /etc/
 uv run ansible cf-mes-db-01 -b -m shell -a "sudo -u postgres patronictl -c /etc/patroni/patroni.yml switchover --candidate cf-mes-db-01 --force"
 ```
 
+#### TimescaleDB
+
+Adds the TimescaleDB extension to the running cluster for equipment time-series data (event reports, trace data, status variables). **No `patronictl pause` needed.**
+
+```bash
+uv run ansible-playbook playbooks/postgres_patroni_timescaledb.yml --ask-vault-pass
+```
+
+What it does, in order:
+
+1. Installs `timescaledb-2-postgresql-18` from Timescale's own repository on **all three** members — replicas replay the leader's WAL and can become leader, so they need the binaries too. Stops before changing anything if Timescale publishes no matching build for this OS.
+2. PATCHes the Patroni cluster configuration (REST API, vaulted password): `shared_preload_libraries = timescaledb`, telemetry off, `timescaledb.max_background_workers = 8`, `max_worker_processes = 19`
+3. Rolling restart, one member at a time — replicas first, leader last. Patroni restarts PostgreSQL in place: a few seconds of write downtime while the leader restarts, **no failover**
+4. Asserts every member preloaded TimescaleDB, then runs `CREATE EXTENSION` on the leader in the listed databases (none by default)
+
+Once a database exists, create the extension in it:
+
+```bash
+uv run ansible-playbook playbooks/postgres_patroni_timescaledb.yml --ask-vault-pass \
+  -e '{"postgres_patroni_timescaledb_databases": ["mes"]}'
+```
+
+- Re-running is safe: unchanged parameters are not PATCHed and members without a pending restart are skipped
+- **Pin the version** after the first run: the final task prints it; set `postgres_patroni_timescaledb_version` in the role defaults (e.g. `2.23.1-0.el10`)
+- Run it **after** `postgres_patroni_cluster.yml` on a rebuild — a fresh bootstrap does not preload TimescaleDB
+- Upgrading the package later: install the new version on all members, rolling-restart, then on the leader in each database, in a fresh session: `psql -X -d mes -c "ALTER EXTENSION timescaledb UPDATE;"`
+- To preload more libraries later, list them together in `postgres_patroni_timescaledb_parameters`: `timescaledb,pg_stat_statements`
+
+Verify:
+
+```bash
+uv run ansible patroni -b -m shell -a "runuser -u postgres -- psql -XAtc 'show shared_preload_libraries'"
+```
+
 #### Redis and Sentinel
 
 Installs Redis and Sentinel on `cache` hosts from Redis's official apt repository. Both services are installed, stopped, and disabled — Sentinel topology is configured post-clone.
@@ -484,6 +518,10 @@ Because sources are never unregistered, their entries remain in the Red Hat port
 
 **`ansible.cfg` duplicate keys.** Ansible refuses a config with a key repeated in the same section, and nothing Ansible-related runs until it's fixed.
 
+**Patroni gave up at boot.** After a cold start of all three DB VMs, Patroni on one node started before etcd had quorum, logged `EtcdConnectionFailed: No more machines in the cluster` and exited — and the PGDG unit has no restart policy, so it stayed down. The cluster role now installs `/etc/systemd/system/patroni.service.d/10-etcd-restart.conf` (`After=etcd.service`, `Restart=on-failure`).
+
+**Pause survives reboots.** `patronictl pause` is stored in etcd, not in the process, so it is still on after the VMs restart — and while paused, Patroni does not start PostgreSQL on a rebooted node (it shows `stopped`). `patronictl list` prints `Maintenance mode: on` as the tell. Always `resume` after a planned shutdown.
+
 **Unquoted secrets in YAML.** A vault value such as `patroni_superuser_password: !Secret123` loads as *empty*: YAML reads the leading `!` as a type tag (`&` and `*` as anchors/aliases). The raw file looks correct, `ansible-vault view` shows 11 characters, but Ansible sees `NoneType`. Single-quote every secret, and check with `type_debug` rather than trusting the file's appearance.
 
 **Variable precedence.** `ansible_*` connection variables beat task keywords. `become: false` on a task loses to `ansible_become: true` from `group_vars`; use `vars: { ansible_become: false }` on the task instead.
@@ -498,6 +536,7 @@ Because sources are never unregistered, their entries remain in the Red Hat port
 | CRI-O | 1.36.5 | `download.opensuse.org/repositories/isv:/cri-o:/stable:/v1.36` |
 | PostgreSQL | 18.6-4PGDG.rhel10.2 | PGDG |
 | Patroni | 4.1.5-1PGDG.rhel10.2 | PGDG (`patroni-etcd`) |
+| TimescaleDB | *pin after first install* | `packagecloud.io/timescale/timescaledb` |
 | etcd | 3.7.1 | GitHub release tarball |
 | Redis / Sentinel | 6:8.10.1-1rl1~resolute1 | `packages.redis.io/deb` |
 | RHEL | 10.2 | Red Hat CDN |
