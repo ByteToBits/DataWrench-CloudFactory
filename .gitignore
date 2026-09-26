@@ -67,6 +67,7 @@ docker-compose.override.yml
 credentials.json
 secrets.yml
 !secrets.example.yml
+fortinet.yml
 
 # --- Logs & data ---
 *.log
@@ -88,4 +89,4 @@ Thumbs.db
 desktop.ini
 CloudFactory/infra/Ansible/inventory/group_vars/all.yml
 CloudFactory/infra/Ansible/ansible.cfg
-CloudFactory/infra/Ansible/inventory/proxmox.yml
+CloudFactory/infra/Ansible/inventory/group_vars/proxmox.yml
