@@ -1,0 +1,39 @@
+# Managed by Ansible (roles/postgres_patroni_haproxy). Local edits are overwritten.
+# Holds the PostgreSQL virtual IP on whichever node has a running HAProxy.
+# HAProxy itself finds the Patroni leader, so the VIP does not need to follow it.
+
+global_defs {
+    router_id {{ inventory_hostname }}
+    enable_script_security
+    script_user root
+}
+
+vrrp_script chk_haproxy {
+    script "/usr/bin/systemctl is-active --quiet haproxy"
+    interval 2
+    fall 2
+    rise 2
+}
+
+vrrp_instance PG_VIP {
+    state BACKUP
+    interface {{ postgres_patroni_haproxy_interface }}
+    virtual_router_id {{ postgres_patroni_haproxy_vrrp_id }}
+    priority {{ 150 - (postgres_patroni_haproxy_members.index(inventory_hostname) * 10) }}
+    advert_int 1
+
+    unicast_src_ip {{ ansible_host }}
+    unicast_peer {
+{% for h in postgres_patroni_haproxy_members if h != inventory_hostname %}
+        {{ hostvars[h].ansible_host }}
+{% endfor %}
+    }
+
+    virtual_ipaddress {
+        {{ postgres_patroni_haproxy_vip }}/{{ postgres_patroni_haproxy_vip_prefix }} dev {{ postgres_patroni_haproxy_interface }}
+    }
+
+    track_script {
+        chk_haproxy
+    }
+}

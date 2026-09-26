@@ -1,0 +1,128 @@
+---
+# HAProxy + keepalived on every Patroni node. Apps connect to the virtual IP:
+#   <vip>:5000 → current leader (read/write)    <vip>:5001 → replicas (read-only)
+
+- name: Install HAProxy and keepalived
+  ansible.builtin.dnf:
+    name:
+      - haproxy
+      - keepalived
+    state: present
+
+- name: Gather service state
+  ansible.builtin.service_facts:
+
+- name: Note whether keepalived is already running here
+  ansible.builtin.set_fact:
+    postgres_patroni_haproxy_keepalived_running: >-
+      {{ ansible_facts.services['keepalived.service'].state | default('') == 'running' }}
+
+# Before keepalived first claims the VIP, nothing should answer on it
+- name: Check the virtual IP is not already in use
+  ansible.builtin.command:
+    cmd: "ping -c 2 -W 1 {{ postgres_patroni_haproxy_vip }}"
+  register: postgres_patroni_haproxy_vip_ping
+  changed_when: false
+  failed_when: false
+  run_once: true
+  when: >-
+    ansible_play_hosts
+    | map('extract', hostvars, 'postgres_patroni_haproxy_keepalived_running')
+    | select | list | length == 0
+
+- name: Refuse to take a virtual IP that another machine answers on
+  ansible.builtin.assert:
+    that:
+      - postgres_patroni_haproxy_vip_ping.rc != 0
+    fail_msg: >-
+      {{ postgres_patroni_haproxy_vip }} already answers ping and keepalived is not running here.
+      Another machine owns it — pick a free address in postgres_patroni_haproxy_vip.
+    quiet: true
+  run_once: true
+  when: postgres_patroni_haproxy_vip_ping is not skipped
+
+# RHEL's SELinux policy only lets HAProxy use a few ports; it must bind 5000/5001/7000
+# and connect to 5432/8008
+- name: Allow HAProxy to use any port under SELinux
+  ansible.posix.seboolean:
+    name: haproxy_connect_any
+    state: true
+    persistent: true
+  when: ansible_facts.selinux.status | default('disabled') == 'enabled'
+
+- name: Open HAProxy ports
+  ansible.posix.firewalld:
+    port: "{{ item }}"
+    permanent: true
+    immediate: true
+    state: enabled
+  loop: "{{ postgres_patroni_haproxy_firewall_ports }}"
+
+- name: Allow VRRP between the nodes
+  ansible.posix.firewalld:
+    rich_rule: 'rule protocol value="vrrp" accept'
+    permanent: true
+    immediate: true
+    state: enabled
+
+- name: Write HAProxy config
+  ansible.builtin.template:
+    src: haproxy.cfg.j2
+    dest: /etc/haproxy/haproxy.cfg
+    owner: root
+    group: root
+    mode: "0644"
+    validate: haproxy -c -f %s
+  notify: Reload HAProxy
+
+- name: Write keepalived config
+  ansible.builtin.template:
+    src: keepalived.conf.j2
+    dest: /etc/keepalived/keepalived.conf
+    owner: root
+    group: root
+    mode: "0640"
+  notify: Restart keepalived
+
+- name: Start HAProxy
+  ansible.builtin.systemd:
+    name: haproxy
+    state: started
+    enabled: true
+
+- name: Start keepalived
+  ansible.builtin.systemd:
+    name: keepalived
+    state: started
+    enabled: true
+
+- name: Apply config changes now
+  ansible.builtin.meta: flush_handlers
+
+- name: Wait for the virtual IP to accept connections
+  ansible.builtin.wait_for:
+    host: "{{ postgres_patroni_haproxy_vip }}"
+    port: "{{ postgres_patroni_haproxy_primary_port }}"
+    timeout: 60
+  run_once: true
+
+- name: Read addresses on the VIP interface
+  ansible.builtin.command:
+    cmd: "ip -4 -br addr show dev {{ postgres_patroni_haproxy_interface }}"
+  register: postgres_patroni_haproxy_addrs
+  changed_when: false
+
+- name: Require exactly one node to hold the virtual IP
+  ansible.builtin.assert:
+    that:
+      - postgres_patroni_haproxy_holders | length == 1
+    fail_msg: "VIP held by {{ postgres_patroni_haproxy_holders | length }} nodes: {{ postgres_patroni_haproxy_holders }}"
+    success_msg: "VIP {{ postgres_patroni_haproxy_vip }} is on {{ postgres_patroni_haproxy_holders | first | default('none') }}"
+  vars:
+    postgres_patroni_haproxy_holders: >-
+      {{ ansible_play_hosts
+         | select('in', postgres_patroni_haproxy_members)
+         | map('extract', hostvars)
+         | selectattr('postgres_patroni_haproxy_addrs.stdout', 'search', postgres_patroni_haproxy_vip ~ '/')
+         | map(attribute='inventory_hostname') | list }}
+  run_once: true
