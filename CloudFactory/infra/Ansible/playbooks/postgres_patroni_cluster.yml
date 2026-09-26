@@ -1,0 +1,13 @@
+---
+- name: Form the etcd and Patroni cluster
+  hosts: patroni
+  become: true
+
+  pre_tasks:
+    - name: Load Patroni credentials
+      ansible.builtin.include_vars:
+        file: ../vars/patroni.vault.yml
+      no_log: true
+
+  roles:
+    - postgres_patroni_cluster

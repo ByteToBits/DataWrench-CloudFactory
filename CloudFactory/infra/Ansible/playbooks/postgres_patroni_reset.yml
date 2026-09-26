@@ -1,0 +1,45 @@
+---
+# Wipes etcd and PostgreSQL state so patroni_cluster.yml can form the cluster from scratch.
+# DESTROYS ALL DATABASE DATA on the targeted hosts. Always pair with --limit.
+
+- name: Reset Patroni and etcd state
+  hosts: patroni
+  become: true
+
+  vars:
+    postgres_patroni_reset_pg_data_dir: /var/lib/pgsql/18/data
+    postgres_patroni_reset_etcd_data_dir: /var/lib/etcd
+
+  pre_tasks:
+    - name: Require explicit confirmation
+      ansible.builtin.assert:
+        that:
+          - confirm_reset | default('') == 'yes'
+        fail_msg: "Refusing to wipe database state. Re-run with -e confirm_reset=yes --limit <host>"
+
+  tasks:
+    - name: Stop and disable Patroni and etcd
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        state: stopped
+        enabled: false
+      loop:
+        - patroni
+        - etcd
+
+    - name: Remove etcd data, PostgreSQL data and Patroni pgpass
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - "{{ postgres_patroni_reset_etcd_data_dir }}/default"
+        - "{{ postgres_patroni_reset_pg_data_dir }}"
+        - /var/lib/pgsql/.pgpass_patroni
+
+    - name: Recreate empty PostgreSQL data directory
+      ansible.builtin.file:
+        path: "{{ postgres_patroni_reset_pg_data_dir }}"
+        state: directory
+        owner: postgres
+        group: postgres
+        mode: "0700"
