@@ -332,6 +332,45 @@ uv run ansible-playbook playbooks/postgres_patroni_reset.yml -e confirm_reset=ye
 
 Refuses to run without `confirm_reset=yes`. Reset every member together before re-forming — a lone reset member cannot rejoin an etcd cluster that still lists it with old state.
 
+#### HAProxy and the database virtual IP
+
+Gives applications one address that always reaches the current Patroni leader. HAProxy runs on every `patroni` host and asks each node's Patroni API (`:8008/primary`, `/replica`) which role it holds; keepalived floats a virtual IP between the three HAProxy instances.
+
+| Endpoint | Routes to |
+|---|---|
+| `10.8.103.10:5000` | current leader — read/write |
+| `10.8.103.10:5001` | replicas, round robin — read-only |
+| `http://10.8.103.10:7000` | HAProxy status page |
+
+```bash
+uv run ansible-playbook playbooks/postgres_patroni_haproxy.yml
+```
+
+- Run after `postgres_patroni_cluster.yml` — HAProxy needs Patroni answering on `:8008`
+- The VIP (`postgres_patroni_haproxy_vip`, default `10.8.103.10`) must be free and outside any DHCP range. The first run pings it and refuses if something already answers
+- keepalived uses unicast VRRP between the three nodes, router ID `103` (`postgres_patroni_haproxy_vrrp_id`) — change it if anything else on VLAN 103 runs VRRP
+- db-01 has the highest priority, so the VIP normally sits there. It moves only if HAProxy or the VM on the holder dies — **not** on a Patroni failover, which HAProxy handles by itself
+- Sets the SELinux boolean `haproxy_connect_any`; RHEL's policy otherwise blocks HAProxy from ports 5000, 5001, 7000, 5432 and 8008
+- The run ends by asserting that exactly one node holds the VIP
+
+Verify:
+
+```bash
+uv run ansible patroni -b -m shell -a "ip -4 -br addr show ens18; systemctl is-active haproxy keepalived"
+psql -h 10.8.103.10 -p 5000 -U postgres -c "select inet_server_addr(), pg_is_in_recovery();"   # leader's IP, f
+psql -h 10.8.103.10 -p 5001 -U postgres -c "select inet_server_addr(), pg_is_in_recovery();"   # a replica's IP, t
+```
+
+Connections through HAProxy reach PostgreSQL from the HAProxy node's address, so `pg_hba.conf` sees VLAN 103 rather than the client. Access control for application subnets therefore lives in the FortiGate policy (e.g. VLAN 101 → `10.8.103.10:5000`), not in `pg_hba`.
+
+Failover test:
+
+```bash
+uv run ansible cf-mes-db-01 -b -m shell -a "sudo -u postgres patronictl -c /etc/patroni/patroni.yml switchover --candidate cf-mes-db-02 --force"
+# :5000 now reaches db-02 without the VIP moving; switch back:
+uv run ansible cf-mes-db-01 -b -m shell -a "sudo -u postgres patronictl -c /etc/patroni/patroni.yml switchover --candidate cf-mes-db-01 --force"
+```
+
 #### Redis and Sentinel
 
 Installs Redis and Sentinel on `cache` hosts from Redis's official apt repository. Both services are installed, stopped, and disabled — Sentinel topology is configured post-clone.

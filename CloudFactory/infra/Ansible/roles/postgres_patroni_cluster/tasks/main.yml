@@ -100,6 +100,29 @@
     mode: "0600"
   notify: Reload Patroni
 
+# The PGDG unit has no restart policy: if etcd isn't up yet at boot, Patroni exits for good
+- name: Create Patroni systemd drop-in directory
+  ansible.builtin.file:
+    path: /etc/systemd/system/patroni.service.d
+    state: directory
+    mode: "0755"
+
+- name: Make Patroni wait for etcd and retry on failure
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/patroni.service.d/10-etcd-restart.conf
+    content: |
+      # Managed by Ansible (roles/postgres_patroni_cluster)
+      [Unit]
+      After=etcd.service
+      Wants=etcd.service
+      StartLimitIntervalSec=0
+
+      [Service]
+      Restart=on-failure
+      RestartSec=10
+    mode: "0644"
+  notify: Reload systemd
+
 - name: Start Patroni on the bootstrap host
   ansible.builtin.systemd:
     name: patroni

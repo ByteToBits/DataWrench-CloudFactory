@@ -1,0 +1,47 @@
+# Managed by Ansible (roles/postgres_patroni_haproxy). Local edits are overwritten.
+# Routes PostgreSQL traffic by asking each node's Patroni REST API (:8008) for its role.
+
+global
+    log /dev/log local0
+    maxconn {{ postgres_patroni_haproxy_maxconn }}
+    user haproxy
+    group haproxy
+    daemon
+
+defaults
+    mode tcp
+    log global
+    option tcplog
+    retries 2
+    timeout connect 4s
+    timeout client 30m
+    timeout server 30m
+    timeout check 5s
+
+listen stats
+    mode http
+    bind *:{{ postgres_patroni_haproxy_stats_port }}
+    stats enable
+    stats uri /
+    stats refresh 5s
+
+# Read/write: only the node whose /primary returns 200
+listen primary
+    bind *:{{ postgres_patroni_haproxy_primary_port }}
+    option httpchk GET /primary
+    http-check expect status 200
+    default-server inter 3s fall 3 rise 2 on-marked-down shutdown-sessions
+{% for h in postgres_patroni_haproxy_members %}
+    server {{ h }} {{ hostvars[h].ansible_host }}:5432 maxconn {{ postgres_patroni_haproxy_backend_maxconn }} check port 8008
+{% endfor %}
+
+# Read-only: nodes whose /replica returns 200
+listen replicas
+    bind *:{{ postgres_patroni_haproxy_replica_port }}
+    balance roundrobin
+    option httpchk GET /replica
+    http-check expect status 200
+    default-server inter 3s fall 3 rise 2 on-marked-down shutdown-sessions
+{% for h in postgres_patroni_haproxy_members %}
+    server {{ h }} {{ hostvars[h].ansible_host }}:5432 maxconn {{ postgres_patroni_haproxy_backend_maxconn }} check port 8008
+{% endfor %}

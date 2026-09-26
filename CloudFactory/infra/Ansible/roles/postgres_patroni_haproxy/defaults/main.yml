@@ -1,0 +1,21 @@
+---
+# Virtual IP that apps connect to. Must be free on VLAN 103 and outside any DHCP range.
+postgres_patroni_haproxy_vip: 10.8.103.10
+postgres_patroni_haproxy_vip_prefix: 24
+postgres_patroni_haproxy_interface: ens18
+
+# VRRP router ID: 1-255, unique per VLAN. Change it if anything else on VLAN 103 runs VRRP.
+postgres_patroni_haproxy_vrrp_id: 103
+
+postgres_patroni_haproxy_members: "{{ groups['patroni'] }}"
+
+postgres_patroni_haproxy_primary_port: 5000   # read/write → current leader
+postgres_patroni_haproxy_replica_port: 5001   # read-only → replicas, round robin
+postgres_patroni_haproxy_stats_port: 7000     # HAProxy status page
+postgres_patroni_haproxy_maxconn: 1000
+postgres_patroni_haproxy_backend_maxconn: 100
+
+postgres_patroni_haproxy_firewall_ports:
+  - "{{ postgres_patroni_haproxy_primary_port }}/tcp"
+  - "{{ postgres_patroni_haproxy_replica_port }}/tcp"
+  - "{{ postgres_patroni_haproxy_stats_port }}/tcp"

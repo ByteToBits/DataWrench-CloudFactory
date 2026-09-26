@@ -1,0 +1,6 @@
+---
+- name: Put HAProxy and a virtual IP in front of Patroni
+  hosts: patroni
+  become: true
+  roles:
+    - postgres_patroni_haproxy
