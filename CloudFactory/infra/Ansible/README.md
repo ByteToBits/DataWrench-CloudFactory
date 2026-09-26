@@ -16,6 +16,9 @@ uv run ansible -i inventory/proxmox.yml proxmox -m ping -o
 # Fleet identity check — hostname, address, MAC, netplan files
 uv run ansible all -o -b -m shell -a 'echo "$(hostname) | $(ip -4 -br addr show ens18 | awk "{print \$3, \$4}") | $(cat /sys/class/net/ens18/address) | $(ls /etc/netplan 2>/dev/null | tr "\n" " ")"'
 
+# Patroni cluster state — leader, replicas, lag
+uv run ansible cf-mes-db-01 -b -m shell -a "sudo -u postgres patronictl -c /etc/patroni/patroni.yml list"
+
 # Checkpoint the whole fleet (VMs stopped, snapshotted, restarted)
 uv run ansible-playbook -i inventory/proxmox.yml playbooks/bulk_snapshot.yml -e snapshot=<name>
 
@@ -59,6 +62,7 @@ Keep the repo inside the WSL filesystem (`~/`), not `/mnt/c`. DrvFs reports worl
 | `inventory/group_vars/all.yml` | `all.example.yml` | user, key, become |
 | `inventory/proxmox.yml` | `proxmox.example.yml` | hypervisor addresses and VM IDs |
 | `vars/fortigate.vault.yml` | — | FortiGate address and API token (ansible-vault) |
+| `vars/patroni.vault.yml` | `vars/patroni.example.yml` | PostgreSQL and Patroni passwords (ansible-vault) |
 
 Set `private_key_file` in `ansible.cfg` as well as in `group_vars`. `group_vars` only loads with the real inventory; without the `ansible.cfg` setting, ad-hoc runs against a bare IP connect with no key and are refused.
 
@@ -256,6 +260,78 @@ etcd is not packaged for RHEL 10 in any repo, so it installs from the upstream G
 
 Patroni does not fail back automatically. After a failover, return leadership to db-01 with `patronictl switchover --candidate cf-mes-db-01`.
 
+#### Forming the Patroni cluster
+
+Post-clone step. Writes `/etc/etcd/etcd.conf` and `/etc/patroni/patroni.yml` from templates, opens the cluster ports, starts etcd on all three members together, then starts Patroni on db-01 (which runs `initdb`) before db-02 and db-03 clone from it.
+
+Create the credentials once — the same vault password as the FortiGate file keeps it to one prompt:
+
+```bash
+cp vars/patroni.example.yml vars/patroni.vault.yml
+nano vars/patroni.vault.yml
+uv run ansible-vault encrypt vars/patroni.vault.yml
+git status --short -uall vars/   # must list ONLY patroni.example.yml
+```
+
+The file holds four variables. **Single-quote every value** — an unquoted password starting with `!`, `&`, `*`, `@` or `%` is parsed by YAML as a tag or anchor and silently becomes empty:
+
+```yaml
+---
+patroni_superuser_password: 'your-password'
+patroni_replication_password: 'your-password'
+patroni_rewind_password: 'your-password'
+patroni_restapi_password: 'your-password'
+```
+
+The role refuses to run if any value is missing or shorter than `postgres_patroni_cluster_min_password_length` (default 8, in the role's `defaults/main.yml`). `openssl rand -base64 32` generates a strong value.
+
+Check what Ansible actually reads, without printing the passwords — expect `str` and the real length for all four:
+
+```bash
+uv run ansible localhost -e @vars/patroni.vault.yml --ask-vault-pass -e ansible_become=false -m debug -a '{"msg": "{{ [patroni_superuser_password, patroni_replication_password, patroni_rewind_password, patroni_restapi_password] | map(\"type_debug\") | list }} {{ [patroni_superuser_password, patroni_replication_password, patroni_rewind_password, patroni_restapi_password] | map(\"string\") | map(\"length\") | list }}"}'
+```
+
+Then:
+
+```bash
+uv run ansible-playbook playbooks/postgres_patroni_cluster.yml --ask-vault-pass
+```
+
+- All three `patroni` hosts must be up — etcd cannot reach quorum with fewer, and the run fails at the health check
+- "Wait for a healthy etcd cluster" and "Wait for every member to be running" retrying a few times is normal — replicas clone the leader with `pg_basebackup` first
+- Patroni members are named after the inventory hostname (`cf-mes-db-01`…)
+- `bootstrap.dcs` settings (PostgreSQL parameters) only apply at first bootstrap. Change them afterwards with `patronictl edit-config`, not by re-running the playbook
+- Re-running is safe: configs are re-templated and Patroni is reloaded, running services are left alone
+
+Verify from the control node:
+
+```bash
+uv run ansible cf-mes-db-01 -b -m shell -a "sudo -u postgres patronictl -c /etc/patroni/patroni.yml list"
+```
+
+Expect one `Leader` and two `Replica` members, all `streaming`, lag 0:
+
+```
+| Member       | Host        | Role    | State     | TL | Receive LSN | Lag | Replay LSN | Lag |
+| cf-mes-db-01 | 10.8.103.11 | Leader  | running   |  1 |             |     |            |     |
+| cf-mes-db-02 | 10.8.103.12 | Replica | streaming |  1 |   0/5000060 |   0 |  0/5000060 |   0 |
+| cf-mes-db-03 | 10.8.103.13 | Replica | streaming |  1 |   0/5000060 |   0 |  0/5000060 |   0 |
+```
+
+On a database node itself, the config is `0600 postgres`, so run `patronictl` as postgres: `sudo -u postgres patronictl -c /etc/patroni/patroni.yml list`.
+
+Once the cluster is formed, the three database VMs are clustered: snapshot and roll them back **together**.
+
+#### Resetting Patroni state
+
+Stops Patroni and etcd, deletes the etcd member data and the PostgreSQL data directory. **Destroys the database.** Needed when a host carries state from a previous cluster — for example a hand-built node, or a member whose etcd raft state diverged.
+
+```bash
+uv run ansible-playbook playbooks/postgres_patroni_reset.yml -e confirm_reset=yes --limit cf-mes-db-01
+```
+
+Refuses to run without `confirm_reset=yes`. Reset every member together before re-forming — a lone reset member cannot rejoin an etcd cluster that still lists it with old state.
+
 #### Redis and Sentinel
 
 Installs Redis and Sentinel on `cache` hosts from Redis's official apt repository. Both services are installed, stopped, and disabled — Sentinel topology is configured post-clone.
@@ -368,6 +444,8 @@ Because sources are never unregistered, their entries remain in the Red Hat port
 **`/etc/hosts` on hypervisors** must resolve the node's hostname to its real address — `hostname -i` must return the management IP, not `127.0.1.1` or an old address.
 
 **`ansible.cfg` duplicate keys.** Ansible refuses a config with a key repeated in the same section, and nothing Ansible-related runs until it's fixed.
+
+**Unquoted secrets in YAML.** A vault value such as `patroni_superuser_password: !Secret123` loads as *empty*: YAML reads the leading `!` as a type tag (`&` and `*` as anchors/aliases). The raw file looks correct, `ansible-vault view` shows 11 characters, but Ansible sees `NoneType`. Single-quote every secret, and check with `type_debug` rather than trusting the file's appearance.
 
 **Variable precedence.** `ansible_*` connection variables beat task keywords. `become: false` on a task loses to `ansible_become: true` from `group_vars`; use `vars: { ansible_become: false }` on the task instead.
 
