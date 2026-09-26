@@ -90,3 +90,6 @@ desktop.ini
 CloudFactory/infra/Ansible/inventory/group_vars/all.yml
 CloudFactory/infra/Ansible/ansible.cfg
 CloudFactory/infra/Ansible/inventory/group_vars/proxmox.yml
+
+# Ansible vault password — never commit
+*.vault.*
