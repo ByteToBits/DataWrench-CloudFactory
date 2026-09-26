@@ -1,0 +1,47 @@
+---
+# Adds TimescaleDB to the running Patroni cluster. No pause needed.
+#   uv run ansible-playbook playbooks/postgres_patroni_timescaledb.yml --ask-vault-pass
+# Create the extension in a database once it exists:
+#   ... -e '{"postgres_patroni_timescaledb_databases": ["mes"]}'
+
+- name: Install TimescaleDB on every Patroni member
+  hosts: patroni
+  become: true
+  tasks:
+    - name: Install packages
+      ansible.builtin.include_role:
+        name: postgres_patroni_timescaledb
+        tasks_from: install
+
+- name: Load TimescaleDB through the Patroni cluster configuration
+  hosts: patroni
+  become: true
+  pre_tasks:
+    - name: Load Patroni credentials
+      ansible.builtin.include_vars:
+        file: ../vars/patroni.vault.yml
+      no_log: true
+  tasks:
+    - name: Set shared_preload_libraries and queue restarts
+      ansible.builtin.include_role:
+        name: postgres_patroni_timescaledb
+        tasks_from: configure
+
+- name: Rolling restart, replicas first and leader last
+  hosts: postgres_patroni_timescaledb_restart
+  become: true
+  serial: 1
+  tasks:
+    - name: Restart this member if needed
+      ansible.builtin.include_role:
+        name: postgres_patroni_timescaledb
+        tasks_from: restart
+
+- name: Verify TimescaleDB and create the extension
+  hosts: patroni
+  become: true
+  tasks:
+    - name: Verify and create
+      ansible.builtin.include_role:
+        name: postgres_patroni_timescaledb
+        tasks_from: extension
