@@ -1,0 +1,61 @@
+# Managed by Ansible (roles/postgres_patroni_cluster). Local edits are overwritten.
+scope: {{ postgres_patroni_cluster_scope }}
+namespace: /service/
+name: {{ inventory_hostname }}
+
+restapi:
+  listen: 0.0.0.0:8008
+  connect_address: {{ ansible_host }}:8008
+  authentication:
+    username: {{ postgres_patroni_cluster_restapi_user }}
+    password: {{ patroni_restapi_password | to_json }}
+
+etcd3:
+  hosts: {% for h in postgres_patroni_cluster_members %}{{ hostvars[h].ansible_host }}:2379{{ ',' if not loop.last else '' }}{% endfor %}
+
+
+bootstrap:
+  dcs:
+    ttl: 30
+    loop_wait: 10
+    retry_timeout: 10
+    maximum_lag_on_failover: 1048576
+    postgresql:
+      use_pg_rewind: true
+      use_slots: true
+      parameters:
+{% for key, value in postgres_patroni_cluster_pg_parameters.items() %}
+        {{ key }}: {{ value | to_json }}
+{% endfor %}
+  initdb:
+    - encoding: UTF8
+    - locale: C.UTF-8
+    - data-checksums
+
+postgresql:
+  listen: 0.0.0.0:5432
+  connect_address: {{ ansible_host }}:5432
+  data_dir: {{ postgres_patroni_cluster_pg_data_dir }}
+  bin_dir: {{ postgres_patroni_cluster_pg_bin_dir }}
+  pgpass: /var/lib/pgsql/.pgpass_patroni
+  authentication:
+    superuser:
+      username: {{ postgres_patroni_cluster_superuser }}
+      password: {{ patroni_superuser_password | to_json }}
+    replication:
+      username: {{ postgres_patroni_cluster_replication_user }}
+      password: {{ patroni_replication_password | to_json }}
+    rewind:
+      username: {{ postgres_patroni_cluster_rewind_user }}
+      password: {{ patroni_rewind_password | to_json }}
+  pg_hba:
+    - local   all          all                                              peer
+    - host    all          all                    127.0.0.1/32              scram-sha-256
+    - host    replication  {{ postgres_patroni_cluster_replication_user }}  {{ postgres_patroni_cluster_subnet }}  scram-sha-256
+    - host    all          all                    {{ postgres_patroni_cluster_subnet }}  scram-sha-256
+
+tags:
+  nofailover: false
+  noloadbalance: false
+  clonefrom: false
+  nosync: false
