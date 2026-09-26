@@ -54,9 +54,9 @@
         fail_msg: "Refusing to shut down. Re-run with -e confirm_shutdown=yes"
 
   tasks:
-    - name: Wait 5 seconds after HYP-02 and HYP-03
+    - name: Wait 10 seconds after HYP-02 and HYP-03
       ansible.builtin.pause:
-        seconds: 5
+        seconds: 10
 
     - name: Stop all VMs on this node in reverse start order
       ansible.builtin.command: pvenode stopall
@@ -69,3 +69,54 @@
       poll: 0
       when: not bulk_shutdown_vms_only
       changed_when: true
+
+    - name: Wait until the hypervisor is fully down
+      ansible.builtin.command: ping -c1 -W1 {{ ansible_host }}
+      delegate_to: localhost
+      vars:
+        ansible_become: false
+      register: bulk_shutdown_ping
+      until: bulk_shutdown_ping.rc != 0
+      retries: 180
+      delay: 5
+      failed_when: false
+      changed_when: false
+      when: not bulk_shutdown_vms_only
+
+- name: Shut down the FortiGate last
+  hosts: localhost
+  gather_facts: false
+
+  vars:
+    ansible_become: false
+    bulk_shutdown_vms_only: "{{ vms_only | default(false) | bool }}"
+
+  pre_tasks:
+    - name: Require explicit confirmation
+      ansible.builtin.assert:
+        that:
+          - confirm_shutdown | default('') == 'yes'
+        fail_msg: "Refusing to shut down. Re-run with -e confirm_shutdown=yes"
+
+  tasks:
+    - name: Load FortiGate credentials
+      ansible.builtin.include_vars:
+        file: ../vars/fortigate.vault.yml
+      when: not bulk_shutdown_vms_only
+      no_log: true
+
+    - name: Wait 10 seconds after HYP-01
+      ansible.builtin.pause:
+        seconds: 10
+      when: not bulk_shutdown_vms_only
+
+    - name: Shut down the FortiGate
+      ansible.builtin.uri:
+        url: "https://{{ fortigate_host }}/api/v2/monitor/system/os/shutdown"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ fortigate_api_token }}"
+        validate_certs: false
+        status_code: [200, -1]
+      when: not bulk_shutdown_vms_only
+      no_log: true
