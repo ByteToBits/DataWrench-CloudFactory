@@ -1,0 +1,41 @@
+---
+postgres_patroni_cluster_scope: mes-pg
+postgres_patroni_cluster_pg_major: "18"
+postgres_patroni_cluster_pg_data_dir: "/var/lib/pgsql/{{ postgres_patroni_cluster_pg_major }}/data"
+postgres_patroni_cluster_pg_bin_dir: "/usr/pgsql-{{ postgres_patroni_cluster_pg_major }}/bin"
+
+# First host in the group bootstraps the cluster and runs initdb; the rest clone from it
+postgres_patroni_cluster_members: "{{ groups['patroni'] }}"
+postgres_patroni_cluster_bootstrap_host: "{{ postgres_patroni_cluster_members | first }}"
+
+# Every patroni host sits on the same /24 (VLAN 103)
+postgres_patroni_cluster_subnet: "{{ ansible_host.split('.')[:3] | join('.') }}.0/24"
+
+postgres_patroni_cluster_etcd_data_dir: /var/lib/etcd
+postgres_patroni_cluster_etcd_token: mes-etcd
+postgres_patroni_cluster_etcdctl: /usr/local/bin/etcdctl
+
+postgres_patroni_cluster_superuser: postgres
+postgres_patroni_cluster_replication_user: replicator
+postgres_patroni_cluster_rewind_user: rewind_user
+postgres_patroni_cluster_restapi_user: patroni
+postgres_patroni_cluster_min_password_length: 8
+
+# bootstrap.dcs values apply ONLY at first bootstrap.
+# After that, change them with: patronictl edit-config
+postgres_patroni_cluster_pg_parameters:
+  wal_level: replica
+  hot_standby: "on"
+  max_connections: 200
+  max_wal_senders: 10
+  max_replication_slots: 10
+  wal_keep_size: 1GB
+  wal_log_hints: "on"
+  password_encryption: scram-sha-256
+  timezone: "{{ timezone | default('Asia/Singapore') }}"
+
+postgres_patroni_cluster_firewall_ports:
+  - 2379/tcp   # etcd client
+  - 2380/tcp   # etcd peer
+  - 5432/tcp   # PostgreSQL
+  - 8008/tcp   # Patroni REST API
