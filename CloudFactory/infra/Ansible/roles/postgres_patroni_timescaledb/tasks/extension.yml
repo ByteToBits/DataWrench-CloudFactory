@@ -1,0 +1,87 @@
+---
+# Confirms every member loaded TimescaleDB, then creates the extension on the leader.
+# Replicas receive CREATE EXTENSION through replication — never run it there.
+
+- name: Read shared_preload_libraries on this member
+  ansible.builtin.command:
+    argv:
+      - runuser
+      - -u
+      - postgres
+      - --
+      - "{{ postgres_patroni_timescaledb_pg_bin }}/psql"
+      - -XAtc
+      - show shared_preload_libraries
+  register: postgres_patroni_timescaledb_preload
+  changed_when: false
+
+- name: Require TimescaleDB to be preloaded
+  ansible.builtin.assert:
+    that:
+      - "'timescaledb' in postgres_patroni_timescaledb_preload.stdout"
+    fail_msg: "{{ inventory_hostname }} has not loaded TimescaleDB (shared_preload_libraries = {{ postgres_patroni_timescaledb_preload.stdout }})"
+    quiet: true
+
+- name: Find the current leader
+  ansible.builtin.uri:
+    url: "http://{{ ansible_host }}:8008/cluster"
+    return_content: true
+  register: postgres_patroni_timescaledb_cluster_now
+  run_once: true
+
+- name: Remember the leader
+  ansible.builtin.set_fact:
+    postgres_patroni_timescaledb_leader_now: >-
+      {{ postgres_patroni_timescaledb_cluster_now.json.members
+         | selectattr('role', 'equalto', 'leader') | map(attribute='name') | first }}
+  run_once: true
+
+- name: Check which databases already have the extension
+  ansible.builtin.command:
+    argv:
+      - runuser
+      - -u
+      - postgres
+      - --
+      - "{{ postgres_patroni_timescaledb_pg_bin }}/psql"
+      - -XAt
+      - -d
+      - "{{ item }}"
+      - -c
+      - select extversion from pg_extension where extname = 'timescaledb'
+  loop: "{{ postgres_patroni_timescaledb_databases }}"
+  register: postgres_patroni_timescaledb_existing
+  changed_when: false
+  delegate_to: "{{ postgres_patroni_timescaledb_leader_now }}"
+  run_once: true
+
+- name: Create the TimescaleDB extension
+  ansible.builtin.command:
+    argv:
+      - runuser
+      - -u
+      - postgres
+      - --
+      - "{{ postgres_patroni_timescaledb_pg_bin }}/psql"
+      - -X
+      - -v
+      - ON_ERROR_STOP=1
+      - -d
+      - "{{ item.item }}"
+      - -c
+      - CREATE EXTENSION timescaledb
+  loop: "{{ postgres_patroni_timescaledb_existing.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+  when: item.stdout | length == 0
+  changed_when: true
+  delegate_to: "{{ postgres_patroni_timescaledb_leader_now }}"
+  run_once: true
+
+- name: Report TimescaleDB status
+  ansible.builtin.debug:
+    msg: >-
+      package {{ postgres_patroni_timescaledb_installed | default('?') }},
+      preloaded ({{ postgres_patroni_timescaledb_preload.stdout }}),
+      leader {{ postgres_patroni_timescaledb_leader_now }},
+      extension in {{ postgres_patroni_timescaledb_databases | default([], true) | join(', ') or 'no databases yet' }}
