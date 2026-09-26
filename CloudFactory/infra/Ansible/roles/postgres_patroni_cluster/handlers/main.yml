@@ -1,4 +1,9 @@
 ---
+# Handlers run in the order listed here: systemd must re-read units before Patroni reloads
+- name: Reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: true
+
 - name: Reload Patroni
   ansible.builtin.systemd:
     name: patroni
