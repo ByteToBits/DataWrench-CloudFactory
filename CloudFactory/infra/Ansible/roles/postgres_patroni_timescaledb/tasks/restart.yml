@@ -1,0 +1,42 @@
+---
+# Runs one member at a time (serial: 1 in the playbook). Patroni restarts PostgreSQL in place,
+# so restarting the leader causes a few seconds of write downtime, not a failover.
+
+- name: Check whether this member needs a restart
+  ansible.builtin.uri:
+    url: "http://{{ ansible_host }}:8008/patroni"
+    return_content: true
+  register: postgres_patroni_timescaledb_member
+
+- name: Restart PostgreSQL through Patroni
+  ansible.builtin.command:
+    argv:
+      - patronictl
+      - -c
+      - /etc/patroni/patroni.yml
+      - restart
+      - "{{ postgres_patroni_timescaledb_scope }}"
+      - "{{ inventory_hostname }}"
+      - --force
+  when: postgres_patroni_timescaledb_member.json.pending_restart | default(false)
+  changed_when: true
+
+- name: Wait for this member to be running with no restart pending
+  ansible.builtin.uri:
+    url: "http://{{ ansible_host }}:8008/patroni"
+    return_content: true
+  register: postgres_patroni_timescaledb_after
+  until: >-
+    postgres_patroni_timescaledb_after.json.state | default('') == 'running' and
+    not (postgres_patroni_timescaledb_after.json.pending_restart | default(false))
+  retries: 36
+  delay: 5
+  when: postgres_patroni_timescaledb_member.json.pending_restart | default(false)
+
+- name: Wait for this member to pass its health check
+  ansible.builtin.uri:
+    url: "http://{{ ansible_host }}:8008/health"
+  register: postgres_patroni_timescaledb_health
+  until: postgres_patroni_timescaledb_health.status == 200
+  retries: 36
+  delay: 5

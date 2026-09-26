@@ -1,0 +1,89 @@
+---
+# Adds TimescaleDB to shared_preload_libraries through Patroni's cluster configuration.
+# Editing postgresql.conf would be overwritten; bootstrap.dcs only applies to a brand-new cluster.
+
+- name: Read cluster state
+  ansible.builtin.uri:
+    url: "http://{{ ansible_host }}:8008/cluster"
+    return_content: true
+  register: postgres_patroni_timescaledb_cluster
+  run_once: true
+
+- name: Identify the leader
+  ansible.builtin.set_fact:
+    postgres_patroni_timescaledb_leader: >-
+      {{ postgres_patroni_timescaledb_cluster.json.members
+         | selectattr('role', 'equalto', 'leader') | map(attribute='name') | first | default('') }}
+  run_once: true
+
+- name: Require a leader before changing configuration
+  ansible.builtin.assert:
+    that:
+      - postgres_patroni_timescaledb_leader | length > 0
+    fail_msg: "The cluster has no leader. Check patronictl list — is the cluster paused?"
+    quiet: true
+  run_once: true
+
+- name: Read Patroni cluster configuration
+  ansible.builtin.uri:
+    url: "http://{{ hostvars[postgres_patroni_timescaledb_leader].ansible_host }}:8008/config"
+    return_content: true
+  register: postgres_patroni_timescaledb_config
+  run_once: true
+
+- name: Work out which parameters need changing
+  ansible.builtin.set_fact:
+    postgres_patroni_timescaledb_changes: >-
+      {{ postgres_patroni_timescaledb_changes | default({}) | combine({item.key: item.value}) }}
+  loop: "{{ postgres_patroni_timescaledb_parameters | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+  when: >-
+    (postgres_patroni_timescaledb_config.json.postgresql.parameters | default({}))[item.key]
+    | default('') | string != item.value | string
+  run_once: true
+
+- name: Update PostgreSQL parameters in the cluster configuration
+  ansible.builtin.uri:
+    url: "http://{{ hostvars[postgres_patroni_timescaledb_leader].ansible_host }}:8008/config"
+    method: PATCH
+    body_format: json
+    body:
+      postgresql:
+        parameters: "{{ postgres_patroni_timescaledb_changes }}"
+    url_username: "{{ postgres_patroni_timescaledb_restapi_user }}"
+    url_password: "{{ patroni_restapi_password }}"
+    force_basic_auth: true
+    status_code: 200
+  when: postgres_patroni_timescaledb_changes | default({}) | length > 0
+  changed_when: true
+  run_once: true
+  no_log: true
+
+# Patroni notices a restart-only change on its next loop (up to loop_wait, 10s)
+- name: Wait for every member to flag a pending restart
+  ansible.builtin.uri:
+    url: "http://{{ ansible_host }}:8008/cluster"
+    return_content: true
+  register: postgres_patroni_timescaledb_pending
+  until: >-
+    postgres_patroni_timescaledb_pending.json.members
+    | selectattr('pending_restart', 'defined') | selectattr('pending_restart')
+    | list | length == postgres_patroni_timescaledb_pending.json.members | length
+  retries: 12
+  delay: 5
+  when: >-
+    postgres_patroni_timescaledb_changes | default({}) | list
+    | intersect(postgres_patroni_timescaledb_restart_parameters) | length > 0
+  run_once: true
+
+# Replicas first: a standby's max_worker_processes must be >= its primary's
+- name: Queue members for restart, replicas first and leader last
+  ansible.builtin.add_host:
+    name: "{{ item }}"
+    groups: postgres_patroni_timescaledb_restart
+  loop: >-
+    {{ (postgres_patroni_timescaledb_cluster.json.members
+        | rejectattr('role', 'equalto', 'leader') | map(attribute='name') | list)
+       + [postgres_patroni_timescaledb_leader] }}
+  changed_when: false

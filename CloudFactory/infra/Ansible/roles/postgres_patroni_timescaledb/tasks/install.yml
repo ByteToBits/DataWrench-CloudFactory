@@ -1,0 +1,70 @@
+---
+# Installs the TimescaleDB package on every member. Replicas need the binaries too:
+# they replay the leader's WAL and may become leader after a failover.
+
+- name: Add Timescale package repository
+  ansible.builtin.yum_repository:
+    name: timescale_timescaledb
+    description: Timescale TimescaleDB
+    baseurl: "{{ postgres_patroni_timescaledb_repo_url }}"
+    gpgcheck: false
+    repo_gpgcheck: true
+    gpgkey: "{{ postgres_patroni_timescaledb_gpgkey }}"
+    sslverify: true
+    sslcacert: /etc/pki/tls/certs/ca-bundle.crt
+    metadata_expire: "300"
+    enabled: true
+
+# -y accepts the repository's metadata signing key on first use
+- name: Refresh Timescale repository metadata
+  ansible.builtin.command:
+    cmd: dnf -y -q makecache --repo timescale_timescaledb
+  changed_when: false
+
+- name: List TimescaleDB builds published for this OS and PostgreSQL version
+  ansible.builtin.command:
+    cmd: "dnf -q repoquery --repo timescale_timescaledb {{ postgres_patroni_timescaledb_package }}"
+  register: postgres_patroni_timescaledb_available
+  changed_when: false
+
+- name: Refuse to continue if Timescale does not publish a matching build
+  ansible.builtin.assert:
+    that:
+      - postgres_patroni_timescaledb_available.stdout_lines | length > 0
+      - >-
+        postgres_patroni_timescaledb_version == '' or
+        postgres_patroni_timescaledb_available.stdout is search(postgres_patroni_timescaledb_version | regex_escape)
+    fail_msg: >-
+      {{ postgres_patroni_timescaledb_package }}
+      {{ postgres_patroni_timescaledb_version }} is not in Timescale's repository for
+      EL{{ ansible_facts.distribution_major_version }}. Nothing was changed.
+      Available: {{ postgres_patroni_timescaledb_available.stdout_lines | default([]) }}
+    quiet: true
+
+- name: Install TimescaleDB
+  ansible.builtin.dnf:
+    name: >-
+      {{ postgres_patroni_timescaledb_package }}{{ ('-' ~ postgres_patroni_timescaledb_version)
+      if postgres_patroni_timescaledb_version else '' }}
+    state: present
+
+- name: Check the TimescaleDB library is where PostgreSQL looks for it
+  ansible.builtin.stat:
+    path: "{{ postgres_patroni_timescaledb_lib }}"
+  register: postgres_patroni_timescaledb_lib_stat
+
+- name: Require the TimescaleDB library
+  ansible.builtin.assert:
+    that:
+      - postgres_patroni_timescaledb_lib_stat.stat.exists
+    fail_msg: "{{ postgres_patroni_timescaledb_lib }} is missing — the package does not match this PostgreSQL build."
+    quiet: true
+
+- name: Read installed package versions
+  ansible.builtin.package_facts:
+
+- name: Record the installed TimescaleDB version
+  ansible.builtin.set_fact:
+    postgres_patroni_timescaledb_installed: >-
+      {{ (ansible_facts.packages[postgres_patroni_timescaledb_package] | first).version }}-{{
+         (ansible_facts.packages[postgres_patroni_timescaledb_package] | first).release }}

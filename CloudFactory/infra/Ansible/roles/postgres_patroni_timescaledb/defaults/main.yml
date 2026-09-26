@@ -1,0 +1,38 @@
+---
+postgres_patroni_timescaledb_pg_major: "18"
+
+# Pin after the first install, e.g. "2.23.1-0.el10" — the run prints the installed version.
+# Empty installs the newest build in Timescale's repository.
+postgres_patroni_timescaledb_version: ""
+postgres_patroni_timescaledb_package: "timescaledb-2-postgresql-{{ postgres_patroni_timescaledb_pg_major }}"
+
+postgres_patroni_timescaledb_repo_url: >-
+  https://packagecloud.io/timescale/timescaledb/el/{{ ansible_facts.distribution_major_version }}/$basearch
+postgres_patroni_timescaledb_gpgkey: https://packagecloud.io/timescale/timescaledb/gpgkey
+
+postgres_patroni_timescaledb_pg_bin: "/usr/pgsql-{{ postgres_patroni_timescaledb_pg_major }}/bin"
+postgres_patroni_timescaledb_lib: "/usr/pgsql-{{ postgres_patroni_timescaledb_pg_major }}/lib/timescaledb.so"
+
+postgres_patroni_timescaledb_scope: mes-pg
+postgres_patroni_timescaledb_restapi_user: patroni
+
+# Background jobs: compression, retention, continuous aggregate refresh
+postgres_patroni_timescaledb_background_workers: 8
+
+# Written into the Patroni cluster configuration (the DCS), applied to every member.
+# To preload more libraries later, list them together: "timescaledb,pg_stat_statements"
+postgres_patroni_timescaledb_parameters:
+  shared_preload_libraries: timescaledb
+  timescaledb.telemetry_level: "off"
+  timescaledb.max_background_workers: "{{ postgres_patroni_timescaledb_background_workers }}"
+  # Timescale's sizing: 3 + background workers + max_parallel_workers (8)
+  max_worker_processes: "{{ 3 + (postgres_patroni_timescaledb_background_workers | int) + 8 }}"
+
+# Changing any of these needs a PostgreSQL restart; the others only need a reload
+postgres_patroni_timescaledb_restart_parameters:
+  - shared_preload_libraries
+  - timescaledb.max_background_workers
+  - max_worker_processes
+
+# Databases to run CREATE EXTENSION in. Leave empty until the database exists (e.g. [mes]).
+postgres_patroni_timescaledb_databases: []

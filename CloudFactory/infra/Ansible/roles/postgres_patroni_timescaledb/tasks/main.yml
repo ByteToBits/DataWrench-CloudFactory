@@ -1,0 +1,5 @@
+---
+# Stages are separate task files because they run in different plays
+# (the restart must go one member at a time). Use playbooks/postgres_patroni_timescaledb.yml.
+- name: Install TimescaleDB packages
+  ansible.builtin.include_tasks: install.yml
