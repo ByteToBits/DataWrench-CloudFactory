@@ -5,6 +5,9 @@
 ![Apache Kafka](https://img.shields.io/badge/Apache_Kafka-231F20?style=flat&logo=apache-kafka&logoColor=white)
 ![Redis](https://img.shields.io/badge/Redis-DC382D?style=flat&logo=redis&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat&logo=postgresql&logoColor=white)
+![Ansible](https://img.shields.io/badge/Ansible-EE0000?style=flat&logo=ansible&logoColor=white)
+![Red Hat](https://img.shields.io/badge/RHEL-EE0000?style=flat&logo=redhat&logoColor=white)
 
 This repository contains my open-source passion project for a Manufacturing Execution System (MES). It includes all backend services for the Kubernetes clusters, along with other resources such as the SQL schema and SEC/GEM host. The project provides a scalable and flexible MES solution, ranging from small-scale manufacturing to critical high-fault-tolerant, high-throughput semiconductor manufacturing.
 
@@ -25,3 +28,8 @@ The project is designed in such a manner that it can be deployed on-premises or 
 However, for the actual deployment, the project will use a Homelab Architecture to facilitate the development of the project. This architecture will also resemble the on-premises deployment in actual production time.
 
 ![Homelab Architecture](https://drive.google.com/uc?export=view&id=1vyy9Ax2i-IHAYhs1DvDP_zFQer5omg3S)
+
+## Database Architecture
+The database runs on a three-node PostgreSQL cluster with TimescaleDB to handle large volumes of time-series data, with one node on each hypervisor. Patroni and etcd handle leader election and automatic failover, whilst HAProxy and a keepalived virtual IP give applications a single address that always reaches the primary database. 
+
+![Database Architecture](https://drive.google.com/uc?export=view&id=1QfIdeIOAGL6L_Q9pPJc1wMV5YD75xSr8)
