@@ -1,5 +1,6 @@
 # DataWrench: Cloud Factory
 
+![Go](https://img.shields.io/badge/Go-00ADD8?style=flat&logo=go&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white)
 ![Kubernetes](https://img.shields.io/badge/Kubernetes-326CE5?style=flat&logo=kubernetes&logoColor=white)
 ![Apache Kafka](https://img.shields.io/badge/Apache_Kafka-231F20?style=flat&logo=apache-kafka&logoColor=white)
@@ -28,6 +29,11 @@ The project is designed in such a manner that it can be deployed on-premises or 
 However, for the actual deployment, the project will use a Homelab Architecture to facilitate the development of the project. This architecture will also resemble the on-premises deployment in actual production time.
 
 ![Homelab Architecture](https://drive.google.com/uc?export=view&id=1vyy9Ax2i-IHAYhs1DvDP_zFQer5omg3S)
+
+## Kubernetes Architecture
+The MES microservices run on a vanilla Kubernetes cluster built with kubeadm, with one control plane and one worker node on each hypervisor so the cluster survives the loss of a whole host. HAProxy and a keepalived virtual IP give every node a single, highly available address for the Kubernetes API, whilst MetalLB provides the application virtual IP and Envoy Gateway routes each request to the right microservice. Calico provides the pod network and network policies, and the cluster connects to the database, cache and message broker running on their own virtual machines.
+
+![Kubernetes Architecture](https://drive.google.com/uc?export=view&id=1oK0W2USHlmCc0CeYx1scuRzu6Mb3o_2h)
 
 ## Database Architecture
 The database runs on a three-node PostgreSQL cluster with TimescaleDB to handle large volumes of time-series data, with one node on each hypervisor. Patroni and etcd handle leader election and automatic failover, whilst HAProxy and a keepalived virtual IP give applications a single address that always reaches the primary database. 
