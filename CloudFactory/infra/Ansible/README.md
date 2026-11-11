@@ -218,7 +218,9 @@ uv run ansible all -m shell -a "sshd -T | grep -E 'permitrootlogin|passwordauthe
 
 #### Kubernetes node software
 
-Installs CRI-O and the Kubernetes packages on `k8s_cluster`. Does **not** run `kubeadm init` or `join` — those are post-clone steps.
+Installs CRI-O and the Kubernetes packages on `k8s_cluster`, and disables firewalld (Cilium manages packet filtering on these nodes; filtering between VLANs happens on the FortiGate). Does **not** run `kubeadm init` or `join` — see [Kubernetes cluster](#kubernetes-cluster).
+
+Package versions are pinned in `roles/k8s_node/defaults/main.yml` with `allow_downgrade`, so changing a version and re-running moves every node to it, up or down. kubelet is masked only on nodes that have not joined a cluster yet, so re-running against a live cluster is safe.
 
 ```bash
 uv run ansible-playbook playbooks/k8s_node.yml
@@ -233,6 +235,47 @@ uv run ansible k8s_cluster -m shell -a "crictl --runtime-endpoint unix:///var/ru
 ```
 
 **Requires the QEMU Guest Agent enabled on the VM** (Proxmox → Options → QEMU Guest Agent). The VM needs a full stop/start afterwards — a reboot does not add the virtio device.
+
+#### Kubernetes cluster
+
+Post-clone step. Two plays:
+
+1. **`k8s_control_plane_haproxy`** on `k8s_control_plane`: HAProxy on `:8443` forwarding to kube-apiserver `:6443` on every control plane (health-checked on `/readyz`), and keepalived holding the API virtual IP `10.8.101.10` (VRRP router ID 101, unicast, priorities 110/100/90 in inventory order).
+2. **`k8s_cluster`** on `k8s_cluster`: `kubeadm init` on `cf-mes-cp-01`, then `cf-mes-cp-02` and `cf-mes-cp-03` join as control planes **one at a time**, then the workers join. Nodes that already have `/etc/kubernetes/kubelet.conf` are skipped, so re-runs are safe.
+
+```bash
+uv run ansible-playbook playbooks/k8s_cluster.yml
+```
+
+Before the first run:
+
+- `playbooks/k8s_node.yml` has run on all six nodes at the same version (the play refuses mismatched kubeadm versions)
+- the root filesystem on every node uses its full disk (`df -h /`) — clones of the golden image start with a 16 GB root
+- `cf-k8s-api.cloud-factory` resolves to `10.8.101.10` on the FortiGate, for kubectl on the control node (the nodes get an `/etc/hosts` entry from the role)
+- VLAN 101 can reach the internet on TCP 443 (image pulls) and UDP 123 (time)
+
+| Setting | Value | Where |
+|---|---|---|
+| Cluster name | `cf-mes` | `roles/k8s_cluster/defaults/main.yml` |
+| API endpoint | `cf-k8s-api.cloud-factory:8443` → VIP `10.8.101.10` | same |
+| Pod network | `10.80.96.0/20`, one `/24` per node (16 nodes) | same |
+| Service network | `10.80.112.0/20` | same |
+
+The pod and service ranges are virtual — they need no VLAN — but must never overlap a real network. **The pod range cannot change without rebuilding the cluster.** Keep `10.80.96.0`–`10.80.127.255` reserved in the address plan.
+
+The admin kubeconfig is copied to `~/.kube/cf-mes.conf` on the control node (mode 0600, outside the repo). It is a cluster-admin credential:
+
+```bash
+export KUBECONFIG=~/.kube/cf-mes.conf
+kubectl get nodes -o wide
+kubectl -n kube-system get pods -l component=etcd
+```
+
+Expect six nodes and three etcd pods. **Nodes stay `NotReady` until Cilium is installed** — that is normal at this stage.
+
+If a join fails, the output is hidden because it contains the join token. Re-run with `-e k8s_cluster_hide_join_secrets=false` to see kubeadm's error.
+
+The HAProxy status page is on `http://<control-plane>:7000/` and shows which API servers are healthy.
 
 #### PostgreSQL, Patroni and etcd
 
@@ -532,8 +575,8 @@ Because sources are never unregistered, their entries remain in the Red Hat port
 
 | Component | Version | Source |
 |---|---|---|
-| Kubernetes | 1.37.0 | `pkgs.k8s.io/core:/stable:/v1.37` |
-| CRI-O | 1.36.5 | `download.opensuse.org/repositories/isv:/cri-o:/stable:/v1.36` |
+| Kubernetes | 1.37.2 | `pkgs.k8s.io/core:/stable:/v1.37` |
+| CRI-O | 1.37.3 | `download.opensuse.org/repositories/isv:/cri-o:/stable:/v1.37` |
 | PostgreSQL | 18.6-4PGDG.rhel10.2 | PGDG |
 | Patroni | 4.1.5-1PGDG.rhel10.2 | PGDG (`patroni-etcd`) |
 | TimescaleDB | *pin after first install* | `packagecloud.io/timescale/timescaledb` |
@@ -544,7 +587,7 @@ Because sources are never unregistered, their entries remain in the Red Hat port
 | Proxmox VE | 9.2.2 | Proxmox |
 | FortiOS | 7.2.13 (FortiGate 61F) | Fortinet |
 
-CRI-O intentionally trails Kubernetes by one minor — this is the upstream-documented pairing, not a workaround.
+CRI-O's minor version matches Kubernetes' minor version (CRI-O 1.37 for Kubernetes 1.37). Move both together on every upgrade.
 
 Kubernetes and CRI-O are pinned by `exclude` in their repo definitions; install tasks pass `disable_excludes` to bypass deliberately. PostgreSQL, Patroni and Redis are pinned by explicit version string, with Redis additionally held via `dpkg_selections`.
 

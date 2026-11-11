@@ -39,24 +39,24 @@
   ansible.builtin.yum_repository:
     name: kubernetes
     description: Kubernetes
-    baseurl: "https://pkgs.k8s.io/core:/stable:/v{{ k8s_version }}/rpm/"
+    baseurl: "https://pkgs.k8s.io/core:/stable:/v{{ k8s_node_kubernetes_version }}/rpm/"
     gpgcheck: true
-    gpgkey: "https://pkgs.k8s.io/core:/stable:/v{{ k8s_version }}/rpm/repodata/repomd.xml.key"
+    gpgkey: "https://pkgs.k8s.io/core:/stable:/v{{ k8s_node_kubernetes_version }}/rpm/repodata/repomd.xml.key"
     exclude: kubelet kubeadm kubectl cri-tools kubernetes-cni
 
 - name: Add CRI-O repo
   ansible.builtin.yum_repository:
     name: cri-o
     description: CRI-O
-    baseurl: "https://download.opensuse.org/repositories/isv:/cri-o:/stable:/v{{ crio_version }}/rpm/"
+    baseurl: "https://download.opensuse.org/repositories/isv:/cri-o:/stable:/v{{ k8s_node_crio_version }}/rpm/"
     gpgcheck: true
-    gpgkey: "https://download.opensuse.org/repositories/isv:/cri-o:/stable:/v{{ crio_version }}/rpm/repodata/repomd.xml.key"
+    gpgkey: "https://download.opensuse.org/repositories/isv:/cri-o:/stable:/v{{ k8s_node_crio_version }}/rpm/repodata/repomd.xml.key"
     exclude: cri-o
 
 - name: Install container tooling
   ansible.builtin.dnf:
     name:
-      - "cri-o-{{ crio_patch_version }}"
+      - "cri-o-{{ k8s_node_crio_patch_version }}"
       - container-selinux
       - podman
       - skopeo
@@ -64,16 +64,18 @@
       - qemu-guest-agent
       - iproute-tc
     state: present
+    allow_downgrade: true
     disable_excludes: cri-o
 
 - name: Install Kubernetes packages
   ansible.builtin.dnf:
     name:
-      - kubelet
-      - kubeadm
-      - kubectl
+      - "kubelet-{{ k8s_node_kubernetes_patch_version }}"
+      - "kubeadm-{{ k8s_node_kubernetes_patch_version }}"
+      - "kubectl-{{ k8s_node_kubernetes_patch_version }}"
       - cri-tools
     state: present
+    allow_downgrade: true
     disable_excludes: kubernetes
 
 - name: Enable CRI-O and guest agent
@@ -85,16 +87,36 @@
     - crio
     - qemu-guest-agent
 
+# Cilium manages packet filtering on Kubernetes nodes; firewalld would fight it.
+# Network filtering for these nodes happens on the FortiGate instead.
+- name: Gather service state
+  ansible.builtin.service_facts:
+
+- name: Stop and disable firewalld
+  ansible.builtin.systemd:
+    name: firewalld
+    state: stopped
+    enabled: false
+  when: "'firewalld.service' in ansible_facts.services"
+
+- name: Check whether this node has already joined a cluster
+  ansible.builtin.stat:
+    path: /etc/kubernetes/kubelet.conf
+  register: k8s_node_kubelet_conf
+
+# Golden image only. Masking kubelet on a node that has joined would take it out of the
+# cluster at its next restart, so re-runs leave joined nodes alone.
 - name: Mask kubelet until cluster init
   ansible.builtin.systemd:
     name: kubelet
     enabled: false
     masked: true
+  when: not k8s_node_kubelet_conf.stat.exists
 
 - name: Pre-pull control plane images
   ansible.builtin.command: >-
     kubeadm config images pull
-    --kubernetes-version v{{ k8s_patch_version }}
+    --kubernetes-version v{{ k8s_node_kubernetes_patch_version }}
     --cri-socket unix:///var/run/crio/crio.sock
-  register: pull
-  changed_when: "'already present' not in pull.stdout"
+  register: k8s_node_image_pull
+  changed_when: "'already present' not in k8s_node_image_pull.stdout"

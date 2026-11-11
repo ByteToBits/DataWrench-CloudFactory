@@ -1,0 +1,44 @@
+# Managed by Ansible (roles/k8s_control_plane_haproxy). Local edits are overwritten.
+# Forwards the Kubernetes API from :{{ k8s_control_plane_haproxy_port }} to kube-apiserver :{{ k8s_control_plane_haproxy_apiserver_port }} on every control plane.
+# TCP passthrough: TLS ends at kube-apiserver, so client certificates keep working.
+
+global
+    log /dev/log local0
+    maxconn 4000
+    user haproxy
+    group haproxy
+    daemon
+
+defaults
+    mode tcp
+    log global
+    option tcplog
+    option dontlognull
+    retries 2
+    timeout connect 5s
+    # Long timeouts: watches, `kubectl logs -f` and `kubectl exec` hold connections open
+    timeout client 1h
+    timeout server 1h
+    timeout check 5s
+
+listen stats
+    mode http
+    bind *:{{ k8s_control_plane_haproxy_stats_port }}
+    stats enable
+    stats uri /
+    stats refresh 5s
+
+frontend k8s_api
+    bind *:{{ k8s_control_plane_haproxy_port }}
+    default_backend k8s_apiservers
+
+# Only control planes whose /readyz answers 200 receive traffic.
+# Anonymous access to /readyz is allowed by Kubernetes' default RBAC.
+backend k8s_apiservers
+    balance roundrobin
+    option httpchk GET /readyz
+    http-check expect status 200
+    default-server inter 3s fall 3 rise 2 on-marked-down shutdown-sessions
+{% for h in k8s_control_plane_haproxy_members %}
+    server {{ h }} {{ hostvars[h].ansible_host }}:{{ k8s_control_plane_haproxy_apiserver_port }} check check-ssl verify none
+{% endfor %}

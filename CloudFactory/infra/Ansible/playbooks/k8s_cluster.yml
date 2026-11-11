@@ -1,0 +1,12 @@
+---
+- name: Put HAProxy and a virtual IP in front of the Kubernetes API
+  hosts: k8s_control_plane
+  become: true
+  roles:
+    - k8s_control_plane_haproxy
+
+- name: Form the Kubernetes cluster with kubeadm
+  hosts: k8s_cluster
+  become: true
+  roles:
+    - k8s_cluster
