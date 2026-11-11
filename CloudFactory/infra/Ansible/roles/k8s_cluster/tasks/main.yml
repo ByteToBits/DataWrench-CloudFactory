@@ -1,0 +1,235 @@
+---
+# Post-clone step. Forms the cluster with kubeadm:
+#   first control plane runs `kubeadm init` → other control planes join one at a time → workers join
+# Safe to re-run: nodes that already have /etc/kubernetes/kubelet.conf are left alone.
+# Nodes report NotReady until a network plugin (Cilium) is installed.
+
+- name: Resolve the API name to the virtual IP locally
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: '\s{{ k8s_cluster_api_name | regex_escape }}$'
+    line: "{{ k8s_cluster_api_vip }} {{ k8s_cluster_api_name }}"
+    owner: root
+    group: root
+    mode: "0644"
+
+# CRI-O ships a bridge network config that would compete with Cilium's
+- name: Find CRI-O's default bridge network config
+  ansible.builtin.find:
+    paths: /etc/cni/net.d
+    patterns: "*crio*bridge*"
+  register: k8s_cluster_crio_bridge
+
+- name: Remove CRI-O's default bridge network config
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ k8s_cluster_crio_bridge.files }}"
+  loop_control:
+    label: "{{ item.path }}"
+  notify: Restart CRI-O
+
+- name: Apply CRI-O restart now
+  ansible.builtin.meta: flush_handlers
+
+# k8s_node masks kubelet in the golden image; kubeadm starts it
+- name: Unmask and enable kubelet
+  ansible.builtin.systemd:
+    name: kubelet
+    masked: false
+    enabled: true
+
+- name: Read the installed kubeadm version
+  ansible.builtin.command:
+    cmd: kubeadm version -o short
+  register: k8s_cluster_kubeadm_version
+  changed_when: false
+
+- name: Require the same kubeadm version on every node
+  ansible.builtin.assert:
+    that:
+      - k8s_cluster_versions | length == 1
+    fail_msg: "kubeadm versions differ: {{ k8s_cluster_versions }}. Run playbooks/k8s_node.yml first."
+    quiet: true
+  vars:
+    k8s_cluster_versions: >-
+      {{ ansible_play_hosts
+         | map('extract', hostvars, ['k8s_cluster_kubeadm_version', 'stdout'])
+         | unique | list }}
+  run_once: true
+
+- name: Check whether this node has already joined
+  ansible.builtin.stat:
+    path: /etc/kubernetes/kubelet.conf
+  register: k8s_cluster_kubelet_conf
+
+# ---- First control plane ----
+
+- name: Write the kubeadm config
+  ansible.builtin.template:
+    src: kubeadm-config.yaml.j2
+    dest: /etc/kubernetes/kubeadm-config.yaml
+    owner: root
+    group: root
+    mode: "0600"
+  when: inventory_hostname == k8s_cluster_first_control_plane
+
+- name: Validate the kubeadm config
+  ansible.builtin.command:
+    cmd: kubeadm config validate --config /etc/kubernetes/kubeadm-config.yaml
+  changed_when: false
+  when: inventory_hostname == k8s_cluster_first_control_plane
+
+- name: Initialise the cluster on the first control plane
+  ansible.builtin.command:
+    cmd: kubeadm init --config /etc/kubernetes/kubeadm-config.yaml --upload-certs
+  changed_when: true
+  when:
+    - inventory_hostname == k8s_cluster_first_control_plane
+    - not k8s_cluster_kubelet_conf.stat.exists
+
+# ---- Joining nodes ----
+
+- name: List the nodes that still need to join
+  ansible.builtin.set_fact:
+    k8s_cluster_pending: >-
+      {{ ansible_play_hosts
+         | reject('equalto', k8s_cluster_first_control_plane)
+         | map('extract', hostvars)
+         | rejectattr('k8s_cluster_kubelet_conf.stat.exists')
+         | map(attribute='inventory_hostname') | list }}
+
+- name: Create a one-hour join token
+  ansible.builtin.command:
+    cmd: kubeadm token create --ttl 1h --print-join-command
+  register: k8s_cluster_join_command
+  changed_when: true
+  delegate_to: "{{ k8s_cluster_first_control_plane }}"
+  run_once: true
+  no_log: "{{ k8s_cluster_hide_join_secrets }}"
+  when: k8s_cluster_pending | length > 0
+
+# Control planes need the cluster's certificates; this uploads them encrypted for 2 hours
+- name: Upload certificates for joining control planes
+  ansible.builtin.command:
+    cmd: kubeadm init phase upload-certs --upload-certs
+  register: k8s_cluster_certificate_key
+  changed_when: true
+  delegate_to: "{{ k8s_cluster_first_control_plane }}"
+  run_once: true
+  no_log: "{{ k8s_cluster_hide_join_secrets }}"
+  when: k8s_cluster_pending | select('in', groups['k8s_control_plane']) | list | length > 0
+
+# One at a time: each join adds an etcd member, and two joining together can break quorum
+- name: Join the other control planes
+  ansible.builtin.command:
+    cmd: >-
+      {{ k8s_cluster_join_command.stdout }}
+      --control-plane
+      --certificate-key {{ k8s_cluster_certificate_key.stdout_lines | last }}
+      --apiserver-advertise-address {{ ansible_host }}
+      --cri-socket {{ k8s_cluster_cri_socket }}
+  changed_when: true
+  throttle: 1
+  no_log: "{{ k8s_cluster_hide_join_secrets }}"
+  when:
+    - inventory_hostname in groups['k8s_control_plane']
+    - inventory_hostname in k8s_cluster_pending
+
+- name: Join the workers
+  ansible.builtin.command:
+    cmd: >-
+      {{ k8s_cluster_join_command.stdout }}
+      --cri-socket {{ k8s_cluster_cri_socket }}
+  changed_when: true
+  no_log: "{{ k8s_cluster_hide_join_secrets }}"
+  when:
+    - inventory_hostname in groups['k8s_workers']
+    - inventory_hostname in k8s_cluster_pending
+
+# ---- Access and checks ----
+
+- name: Create root's kubectl directory on the control planes
+  ansible.builtin.file:
+    path: /root/.kube
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+  when: inventory_hostname in groups['k8s_control_plane']
+
+- name: Give root on the control planes a kubeconfig
+  ansible.builtin.copy:
+    src: /etc/kubernetes/admin.conf
+    dest: /root/.kube/config
+    remote_src: true
+    owner: root
+    group: root
+    mode: "0600"
+  when: inventory_hostname in groups['k8s_control_plane']
+
+- name: Copy the admin kubeconfig to the Ansible control node
+  ansible.builtin.fetch:
+    src: /etc/kubernetes/admin.conf
+    dest: "{{ k8s_cluster_local_kubeconfig }}"
+    flat: true
+  delegate_to: "{{ k8s_cluster_first_control_plane }}"
+  run_once: true
+
+# admin.conf holds a cluster-admin client key
+- name: Restrict the local kubeconfig to your user
+  ansible.builtin.file:
+    path: "{{ k8s_cluster_local_kubeconfig }}"
+    mode: "0600"
+  delegate_to: localhost
+  run_once: true
+  vars:
+    ansible_become: false
+
+- name: Check the API answers through the virtual IP
+  ansible.builtin.command:
+    cmd: kubectl --kubeconfig /etc/kubernetes/admin.conf get --raw /readyz
+  register: k8s_cluster_readyz
+  changed_when: false
+  failed_when: k8s_cluster_readyz.stdout != 'ok'
+  retries: 12
+  delay: 5
+  until: k8s_cluster_readyz.stdout == 'ok'
+  delegate_to: "{{ k8s_cluster_first_control_plane }}"
+  run_once: true
+
+- name: Wait for every node to register
+  ansible.builtin.command:
+    cmd: kubectl --kubeconfig /etc/kubernetes/admin.conf get nodes -o name
+  register: k8s_cluster_nodes
+  changed_when: false
+  retries: 12
+  delay: 10
+  until: >-
+    ansible_play_hosts_all
+    | map('regex_replace', '^', 'node/')
+    | difference(k8s_cluster_nodes.stdout_lines)
+    | length == 0
+  delegate_to: "{{ k8s_cluster_first_control_plane }}"
+  run_once: true
+
+- name: Count the etcd members
+  ansible.builtin.command:
+    cmd: >-
+      kubectl --kubeconfig /etc/kubernetes/admin.conf -n kube-system
+      get pods -l component=etcd -o name
+  register: k8s_cluster_etcd
+  changed_when: false
+  retries: 12
+  delay: 10
+  until: k8s_cluster_etcd.stdout_lines | length == groups['k8s_control_plane'] | length
+  delegate_to: "{{ k8s_cluster_first_control_plane }}"
+  run_once: true
+
+- name: Report the result
+  ansible.builtin.debug:
+    msg:
+      - "{{ k8s_cluster_nodes.stdout_lines | length }} nodes registered, {{ k8s_cluster_etcd.stdout_lines | length }} etcd members."
+      - "Nodes show NotReady until Cilium is installed — expected at this stage."
+      - "kubectl from this machine: export KUBECONFIG={{ k8s_cluster_local_kubeconfig }}"
+  run_once: true

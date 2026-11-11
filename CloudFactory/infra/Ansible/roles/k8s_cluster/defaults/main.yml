@@ -1,0 +1,25 @@
+---
+# Shown in kubeconfig contexts and reused by Cilium. Lowercase letters, digits and dashes only.
+k8s_cluster_name: cf-mes
+
+# Every node and kubectl reach the API by this name → keepalived VIP → HAProxy :8443 → kube-apiserver :6443.
+# The name and VIP are written into the API server certificate; changing them later means re-issuing it.
+k8s_cluster_api_name: cf-k8s-api.cloud-factory
+k8s_cluster_api_vip: 10.8.101.10
+k8s_cluster_api_port: 8443
+
+# Virtual ranges that exist only inside the cluster. They need no VLAN, but must not overlap any
+# real network (VLANs, VPNs, Docker bridges). The pod range cannot change without a rebuild.
+k8s_cluster_pod_subnet: 10.80.96.0/20       # one /24 per node → room for 16 nodes
+k8s_cluster_service_subnet: 10.80.112.0/20  # 4,096 service addresses
+k8s_cluster_node_cidr_mask: 24
+
+k8s_cluster_first_control_plane: "{{ groups['k8s_control_plane'] | first }}"
+k8s_cluster_cri_socket: unix:///var/run/crio/crio.sock
+
+# The admin kubeconfig is copied here on the Ansible control node, outside the repo
+k8s_cluster_local_kubeconfig: "{{ lookup('ansible.builtin.env', 'HOME') }}/.kube/cf-mes.conf"
+
+# Join tokens and the certificate key expire within 2 hours, but stay out of the output anyway.
+# Set false (-e k8s_cluster_hide_join_secrets=false) to see kubeadm's error when a join fails.
+k8s_cluster_hide_join_secrets: true

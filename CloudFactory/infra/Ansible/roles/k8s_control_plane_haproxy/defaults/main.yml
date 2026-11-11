@@ -1,0 +1,15 @@
+---
+# Virtual IP for the Kubernetes API. Must be free on VLAN 101 and outside any DHCP range.
+k8s_control_plane_haproxy_vip: 10.8.101.10
+k8s_control_plane_haproxy_vip_prefix: 24
+k8s_control_plane_haproxy_interface: ens18
+
+# VRRP router ID: 1-255, unique per VLAN. Patroni uses 103 on VLAN 103, so no clash.
+k8s_control_plane_haproxy_vrrp_id: 101
+
+# Inventory order sets keepalived priority: first = 110 (master), then 100, 90
+k8s_control_plane_haproxy_members: "{{ groups['k8s_control_plane'] }}"
+
+k8s_control_plane_haproxy_port: 8443            # clients and nodes connect here, via the VIP
+k8s_control_plane_haproxy_apiserver_port: 6443  # kube-apiserver on each control plane
+k8s_control_plane_haproxy_stats_port: 7000      # HAProxy status page

@@ -1,0 +1,39 @@
+# Managed by Ansible (roles/k8s_control_plane_haproxy). Local edits are overwritten.
+# Holds the Kubernetes API virtual IP on whichever control plane has a running HAProxy.
+# HAProxy health-checks every kube-apiserver, so the VIP does not need to follow a healthy API server.
+
+global_defs {
+    router_id {{ inventory_hostname }}
+    enable_script_security
+    script_user root
+}
+
+vrrp_script chk_haproxy {
+    script "/usr/bin/systemctl is-active --quiet haproxy"
+    interval 2
+    fall 2
+    rise 2
+}
+
+vrrp_instance K8S_API_VIP {
+    state BACKUP
+    interface {{ k8s_control_plane_haproxy_interface }}
+    virtual_router_id {{ k8s_control_plane_haproxy_vrrp_id }}
+    priority {{ 110 - (k8s_control_plane_haproxy_members.index(inventory_hostname) * 10) }}
+    advert_int 1
+
+    unicast_src_ip {{ ansible_host }}
+    unicast_peer {
+{% for h in k8s_control_plane_haproxy_members if h != inventory_hostname %}
+        {{ hostvars[h].ansible_host }}
+{% endfor %}
+    }
+
+    virtual_ipaddress {
+        {{ k8s_control_plane_haproxy_vip }}/{{ k8s_control_plane_haproxy_vip_prefix }} dev {{ k8s_control_plane_haproxy_interface }}
+    }
+
+    track_script {
+        chk_haproxy
+    }
+}

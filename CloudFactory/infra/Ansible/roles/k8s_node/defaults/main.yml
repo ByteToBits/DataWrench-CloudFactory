@@ -1,5 +1,6 @@
 ---
-k8s_version: "1.37"
-k8s_patch_version: "1.37.0"
-crio_version: "1.36"
-crio_patch_version: "1.36.5-150500.1.1"
+# CRI-O's minor version must match Kubernetes' minor version (CRI-O 1.37 for Kubernetes 1.37)
+k8s_node_kubernetes_version: "1.37"
+k8s_node_kubernetes_patch_version: "1.37.2"
+k8s_node_crio_version: "1.37"
+k8s_node_crio_patch_version: "1.37.3"
